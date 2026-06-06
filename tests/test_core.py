@@ -17,6 +17,8 @@ class WechatAiCoreTests(unittest.TestCase):
         root = Path(tmp.name)
         (root / "素材说明.md").write_text("# 名士K2\n2000G大流量\nDPM动态蛋白纳滤", encoding="utf-8")
         (root / "端午促销海报.jpg").write_bytes(b"fake image")
+        (root / "K2产品图.jpg").write_bytes(b"fake product image")
+        (root / "朴道logo.png").write_bytes(b"fake logo image")
         (root / "K2产品单页.pdf").write_bytes(b"%PDF Pudow K2 2000G IoT")
         docx_path = root / "素材.docx"
         with zipfile.ZipFile(docx_path, "w") as zf:
@@ -253,6 +255,19 @@ class WechatAiCoreTests(unittest.TestCase):
             "复制HTML",
             "HTML源码",
             "公众号正文预览优先",
+            "左侧优化工具",
+            "右侧图片工具",
+            "全部素材图片",
+            "搜索全部图片",
+            "图片分类筛选",
+            "点击预览大图",
+            "选择替换当前图片",
+            "文章结构导航",
+            "封面",
+            "正文模块",
+            "CTA",
+            "编辑面板",
+            "模板切换",
         ]:
             self.assertIn(text, new_page + preview)
 
@@ -265,6 +280,9 @@ class WechatAiCoreTests(unittest.TestCase):
         self.assertIn("CTA按钮", generated)
         self.assertIn("重点卖点卡片", generated)
         self.assertNotIn("配图占位：请从素材库补充", generated)
+        self.assertIn("K2产品图.jpg", preview)
+        self.assertIn("端午促销海报.jpg", preview)
+        self.assertIn("朴道logo.png", preview)
 
     def test_asset_library_has_detail_drawer_filters_and_enterprise_copy(self):
         from wechat_ai.web import render_asset_page

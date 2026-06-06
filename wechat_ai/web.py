@@ -44,7 +44,7 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .mark{{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--teal));display:grid;place-items:center;color:#fff;}}
     nav a{{color:#334155;text-decoration:none;font-weight:700;margin:0 8px;padding:8px 10px;border-radius:6px;}}
     nav a:hover{{background:#eef4ff;color:var(--blue);}}
-    main{{max-width:1180px;margin:0 auto;padding:28px 22px 54px;}}
+    main{{max-width:1440px;margin:0 auto;padding:28px 22px 54px;}}
     h1{{font-size:30px;line-height:1.25;margin:0 0 8px;letter-spacing:0;}}
     h2{{font-size:20px;margin:0 0 10px;letter-spacing:0;}}
     h3{{font-size:16px;margin:0 0 8px;letter-spacing:0;}}
@@ -85,6 +85,8 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     textarea{{min-height:110px;resize:vertical;}}
     .form-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}}
     .preview-grid{{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;align-items:start;}}
+    .article-workspace{{display:grid;grid-template-columns:240px minmax(0,1fr) 290px;gap:16px;align-items:start;}}
+    .side-tools{{position:sticky;top:86px;display:flex;flex-direction:column;gap:12px;}}
     .preview{{background:#fff;padding:18px;border:1px solid var(--line);border-radius:8px;max-height:640px;overflow:auto;}}
     pre{{white-space:pre-wrap;background:#101827;color:#e2e8f0;padding:14px;border-radius:6px;overflow:auto;}}
     .score{{font-size:38px;font-weight:900;color:var(--teal);}}
@@ -112,6 +114,8 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .image-slot-card{{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff;}}
     .selector-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px;}}
     .selector-item{{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfdff;text-decoration:none;color:inherit;display:block;}}
+    .selector-toolbar{{display:grid;grid-template-columns:1.2fr .8fr;gap:10px;margin:12px 0;}}
+    .selector-actions{{display:flex;gap:6px;flex-wrap:wrap;}}
     .generator-strip{{position:relative;overflow:hidden;border:1px solid #bde7dd;background:rgba(239,250,248,.92);border-radius:8px;padding:12px 14px;margin:12px 0;color:#0f766e;font-weight:800;}}
     .generator-strip:after{{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);transform:translateX(-100%);animation:scan 1.8s linear infinite;}}
     @keyframes scan{{to{{transform:translateX(100%)}}}}
@@ -128,8 +132,28 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .asset-drawer:target{{display:block;animation:slideIn .2s ease both;}}
     @keyframes slideIn{{from{{opacity:0;transform:translateX(24px)}}to{{opacity:1;transform:none}}}}
     .pdf-card{{height:124px;border-radius:7px;background:linear-gradient(135deg,#fff7ed,#fee2e2);display:grid;place-items:center;margin-bottom:12px;color:#9f1239;font-weight:900;text-align:center;}}
+    @media (max-width:1100px){{.article-workspace{{grid-template-columns:1fr}}.side-tools{{position:static}}}}
     @media (max-width:900px){{.hero,.preview-grid,.form-grid,.version-grid{{grid-template-columns:1fr}}.metrics,.cards,.asset-grid,.wizard,.option-grid,.style-grid,.image-slot-grid,.selector-grid,.workflow{{grid-template-columns:1fr}}}}
   </style>
+  <script>
+    function filterSelector(input, scopeId) {{
+      var scope = document.getElementById(scopeId) || document;
+      var keyword = (input.value || '').toLowerCase();
+      var category = (scope.querySelector('[data-selector-category]') || {{value:''}}).value;
+      scope.querySelectorAll('.selector-item').forEach(function(item) {{
+        var name = (item.dataset.name || '').toLowerCase();
+        var itemCategory = item.dataset.category || '';
+        var hitText = !keyword || name.indexOf(keyword) >= 0;
+        var hitCategory = !category || itemCategory === category;
+        item.style.display = hitText && hitCategory ? 'block' : 'none';
+      }});
+    }}
+    function filterSelectorCategory(select, scopeId) {{
+      var scope = document.getElementById(scopeId) || document;
+      var input = scope.querySelector('[data-selector-search]') || {{value:''}};
+      filterSelector(input, scopeId);
+    }}
+  </script>
 </head>
 <body>
 <header>
@@ -259,7 +283,7 @@ def render_preview_page(conn, job_id: int) -> str:
     suggestions = "".join(f"<span class='chip'>{escape(item)}</span>" for item in quality.get("suggestions", [])[:3])
     payload = article_payload(article["job"])
     candidates = title_candidates(payload)
-    image_assets = [asset for asset in list_assets(conn, limit=80) if asset["type"] == "image"]
+    image_assets = [asset for asset in list_assets(conn, limit=10000) if asset["type"] == "image"]
     body = f"""
 {render_workflow()}
 <section class="hero">
@@ -283,13 +307,32 @@ def render_preview_page(conn, job_id: int) -> str:
 {render_title_drawer(job_id, candidates)}
 {render_rewrite_drawer(job_id, original, rewritten)}
 {render_image_drawer(job_id, latest["image_slots"], image_assets)}
-<section class="preview-grid">
-  <div class="surface"><p class="muted">公众号正文预览优先</p><h2>公众号样式预览</h2><div class="preview">{latest['html']}</div></div>
-  <div>
-    <section class="surface"><h2>当前文章已使用的图片清单</h2>{render_used_image_list(latest["image_slots"])}</section>
-    <section class="surface"><h2>最终确认</h2><p>确认标题、正文、图片和 CTA 后，点击复制HTML。复制前建议在公众号后台再预览一次。</p><button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">复制HTML</button></section>
+<section class="article-workspace">
+  <aside class="side-tools">
+    <section class="surface">
+      <p class="muted">左侧优化工具</p>
+      <h2>文章结构导航</h2>
+      <a class="chip" href="#title-drawer">标题</a>
+      <a class="chip" href="#image-drawer">封面</a>
+      <a class="chip" href="#html-source">正文模块</a>
+      <a class="chip" href="#html-source">CTA</a>
+    </section>
     <section class="surface"><h2>审核要点</h2><ul>{audit}</ul></section>
-  </div>
+  </aside>
+  <div class="surface"><p class="muted">公众号正文预览优先</p><h2>公众号样式预览</h2><div class="preview">{latest['html']}</div></div>
+  <aside class="side-tools">
+    <section class="surface">
+      <p class="muted">右侧图片工具</p>
+      <h2>编辑面板</h2>
+      <a class="btn secondary" href="#title-drawer">标题优化</a>
+      <a class="btn secondary" href="#rewrite-drawer">AI改写</a>
+      <a class="btn secondary" href="#image-drawer">图片调整</a>
+      <a class="btn secondary" href="/templates">模板切换</a>
+      <button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">复制HTML</button>
+    </section>
+    <section class="surface"><h2>当前文章已使用的图片清单</h2>{render_used_image_list(latest["image_slots"])}</section>
+    <section class="surface"><h2>最终确认</h2><p>确认标题、正文、图片和 CTA 后，点击复制HTML。复制前建议在公众号后台再预览一次。</p></section>
+  </aside>
 </section>
 <section class="surface"><h2>Markdown 正文</h2><pre>{escape(latest['markdown'])}</pre></section>
 <details class="surface"><summary><strong>HTML源码</strong></summary><pre id="html-source">{escape(latest['html'])}</pre></details>"""
@@ -339,16 +382,19 @@ def render_image_drawer(job_id: int, slots: list[dict], image_assets: list[dict]
     if not image_assets:
         selector = '<p>未找到可用图片。推荐素材列表为空，请先在素材库中补充图片。</p>'
     else:
-        selector = "".join(render_selector_item(asset) for asset in image_assets[:8])
+        selector = "".join(render_selector_item(asset) for asset in image_assets)
+    filters = render_selector_filters(image_assets, "image-drawer")
     return f"""
 <section id="image-drawer" class="drawer">
   <a href="#" class="btn secondary drawer-close">关闭</a>
   <h2>图片调整</h2>
-  <p>生成文章后自动显示封面图、产品图、参数图、品牌图。案例图可在素材库选择器中继续补充。每个图片位都可以从素材库选择器中替换。</p>
+  <p>全部素材图片都在这里。生成文章后自动显示封面图、产品图、参数图、品牌图。案例图可在素材库选择器中继续补充。每个图片位都可以从素材库选择器中替换。</p>
   <div class="image-slot-grid">{slot_cards}</div>
   <h3 style="margin-top:16px;">素材库选择器</h3>
+  {filters}
   <div class="selector-grid">{selector}</div>
-</section>"""
+</section>
+{render_image_preview_drawers(image_assets)}"""
 
 
 def render_image_slot_card(job_id: int, idx: int, slot: dict, image_assets: list[dict]) -> str:
@@ -359,7 +405,7 @@ def render_image_slot_card(job_id: int, idx: int, slot: dict, image_assets: list
         if asset_id
         else "<span>推荐素材列表</span>"
     )
-    replacements = "".join(render_selector_item(asset, job_id, idx) for asset in image_assets[:6])
+    replacements = "".join(render_selector_item(asset, job_id, idx) for asset in image_assets)
     return f"""
 <article class="image-slot-card">
   <h3>{escape(slot.get('position', f'图片位{idx + 1}'))}</h3>
@@ -382,16 +428,46 @@ def render_used_image_list(slots: list[dict]) -> str:
 
 
 def render_selector_item(asset: dict, job_id: int | None = None, slot_idx: int = 0) -> str:
-    href = (
+    choose_href = (
         f"/articles/{job_id}/replace-image?slot={slot_idx}&path={quote(asset['path'])}"
         if job_id is not None
         else "#"
     )
+    name = Path(asset["path"]).name
     return f"""
-<a class="selector-item" href="{href}">
-  <div class="thumb"><img alt="素材缩略图" src="/asset-thumb/{asset['id']}"></div>
-  <p>{escape(Path(asset['path']).name)}</p>
-</a>"""
+<article class="selector-item" data-name="{escape(name)}" data-category="{escape(asset['category'])}">
+  <a href="#image-preview-{asset['id']}" title="点击预览大图"><div class="thumb"><img alt="素材缩略图" src="/asset-thumb/{asset['id']}"></div></a>
+  <p>{escape(name)}</p>
+  <p class="muted">{escape(asset['category'])}</p>
+  <div class="selector-actions">
+    <a class="btn secondary" href="#image-preview-{asset['id']}">点击预览大图</a>
+    <a class="btn" href="{choose_href}">选择替换当前图片</a>
+  </div>
+</article>"""
+
+
+def render_selector_filters(image_assets: list[dict], scope_id: str) -> str:
+    categories = sorted({asset["category"] for asset in image_assets})
+    options = "".join(f'<option value="{escape(category)}">{escape(category)}</option>' for category in categories)
+    return f"""
+<div class="selector-toolbar">
+  <label>搜索全部图片<input data-selector-search placeholder="搜索全部图片：产品、logo、海报" oninput="filterSelector(this, '{scope_id}')"></label>
+  <label>图片分类筛选<select data-selector-category onchange="filterSelectorCategory(this, '{scope_id}')"><option value="">全部分类</option>{options}</select></label>
+</div>"""
+
+
+def render_image_preview_drawers(image_assets: list[dict]) -> str:
+    return "".join(
+        f"""
+<aside id="image-preview-{asset['id']}" class="asset-drawer">
+  <a href="#image-drawer" class="btn secondary" style="float:right;">返回选择器</a>
+  <h2>点击预览大图</h2>
+  <div class="thumb" style="height:360px;"><img alt="{escape(Path(asset['path']).name)}" src="/asset-thumb/{asset['id']}"></div>
+  <p><strong>文件名</strong>：{escape(Path(asset['path']).name)}</p>
+  <p><strong>分类</strong>：{escape(asset['category'])}</p>
+</aside>"""
+        for asset in image_assets
+    )
 
 
 def asset_id_for_path(image_assets: list[dict], path: str) -> int | None:
