@@ -15,11 +15,11 @@ def build_article_content(conn, payload: dict, api_key: str | None = None, rewri
 
 
 def build_api_stub(conn, payload: dict, api_key: str, rewrite_hint: str | None = None) -> dict:
-    # MVP 只预留真实模型调用路径，不在没有明确供应商配置时上传素材。
+    # 只预留真实模型调用路径，不在没有明确供应商配置时上传素材。
     article = build_simulation_article(conn, payload, rewrite_hint)
     article["generation_mode"] = "api"
     article["generation_mode_label"] = generation_mode_label(api_key)
-    article["audit_notes"].insert(0, "当前为真实模型调用预留路径，MVP Demo 使用本地生成结构。")
+    article["audit_notes"].insert(0, "当前为真实模型调用预留路径；未配置业务模型时使用本地模拟生成结构。")
     return article
 
 
@@ -117,9 +117,12 @@ def holiday_markdown(payload: dict, key_points: list[str], assets: list[dict]) -
 
 def make_image_slots(assets: list[dict], payload: dict) -> list[dict]:
     images = [asset for asset in assets if asset["type"] == "image"]
-    positions = ["封面图", "产品图", "案例图"]
+    positions = ["封面图", "产品图", "参数图", "品牌图"]
     slots = []
-    for idx, asset in enumerate(images[:3]):
+    if images:
+        while len(images) < len(positions):
+            images.append(images[len(images) % len(images)])
+    for idx, asset in enumerate(images[: len(positions)]):
         slots.append(
             {
                 "position": positions[idx],

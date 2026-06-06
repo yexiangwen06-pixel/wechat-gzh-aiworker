@@ -105,6 +105,15 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .image-slot-card{{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff;}}
     .selector-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px;}}
     .selector-item{{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfdff;}}
+    .asset-card,.option-card,.template-card,.article-card,.image-slot-card{{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}}
+    .asset-card:hover,.option-card:hover,.template-card:hover,.article-card:hover,.image-slot-card:hover{{transform:translateY(-3px);box-shadow:0 18px 42px rgba(23,40,72,.12);border-color:#b8c7dc;}}
+    .btn:hover,button:hover{{transform:translateY(-1px);filter:brightness(1.03);}}
+    main{{animation:fadeIn .22s ease both;}}
+    @keyframes fadeIn{{from{{opacity:0;transform:translateY(6px)}}to{{opacity:1;transform:none}}}}
+    .asset-drawer{{display:none;position:fixed;right:22px;top:86px;width:min(440px,calc(100vw - 44px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 80px rgba(15,23,42,.22);z-index:4;padding:18px;}}
+    .asset-drawer:target{{display:block;animation:slideIn .2s ease both;}}
+    @keyframes slideIn{{from{{opacity:0;transform:translateX(24px)}}to{{opacity:1;transform:none}}}}
+    .pdf-card{{height:124px;border-radius:7px;background:linear-gradient(135deg,#fff7ed,#fee2e2);display:grid;place-items:center;margin-bottom:12px;color:#9f1239;font-weight:900;text-align:center;}}
     @media (max-width:900px){{.hero,.preview-grid,.form-grid,.version-grid{{grid-template-columns:1fr}}.metrics,.cards,.asset-grid,.wizard,.option-grid,.style-grid,.image-slot-grid,.selector-grid,.workflow{{grid-template-columns:1fr}}}}
   </style>
 </head>
@@ -186,7 +195,7 @@ def render_new_article_page(conn, api_key: str | None = None) -> str:
     <div class="option-grid">
       <label class="option-card"><input type="radio" name="content_type" value="new_product" checked><strong>新品上市</strong><p>突出产品卖点、技术亮点和企业采购价值。</p></label>
       <label class="option-card"><input type="radio" name="content_type" value="holiday_campaign"><strong>节日促销</strong><p>突出活动节点、优惠信息和咨询转化。</p></label>
-      <label class="option-card"><input type="radio" name="content_type" value="new_product"><strong>品牌科普</strong><p>暂用新品模板，适合答辩展示后续扩展方向。</p></label>
+      <label class="option-card"><input type="radio" name="content_type" value="new_product"><strong>品牌科普</strong><p>暂用新品模板，适合沉淀品牌知识和产品认知。</p></label>
     </div>
   </section>
   <section class="surface step-block">
@@ -216,6 +225,7 @@ IoT智能管理</textarea>
     <p class="muted">Step4 生成文章</p>
     <h2>生成后进入优化工作流</h2>
     <p>AI 将自动匹配素材库图片，生成接近公众号最终效果的预览，并进入标题优化、AI改写、图片调整和最终确认流程。</p>
+    <div class="recommend">生成中 AI 正在分析素材：产品图、参数图、品牌图会自动进入文章预览。</div>
     <button type="submit">生成文章</button>
   </section>
 </form>"""
@@ -240,6 +250,7 @@ def render_preview_page(conn, job_id: int) -> str:
     <p class="muted">文章预览 · 智能匹配结果</p>
     <h1>{escape(latest['title'])}</h1>
     <p>AI 已完成生成，接下来按工作流完成标题优化、AI改写、图片调整、最终确认和复制HTML。</p>
+    <div class="recommend">已应用新标题后会立即更新文章标题；当前页面保留全部候选标题供运营选择。</div>
     <button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">一键复制HTML</button>
     <a class="btn secondary" href="#title-drawer">标题优化</a>
     <a class="btn secondary" href="#rewrite-drawer">AI改写</a>
@@ -258,12 +269,13 @@ def render_preview_page(conn, job_id: int) -> str:
 <section class="preview-grid">
   <div class="surface"><h2>公众号样式预览</h2><div class="preview">{latest['html']}</div></div>
   <div>
+    <section class="surface"><h2>当前文章已使用的图片清单</h2>{render_used_image_list(latest["image_slots"])}</section>
     <section class="surface"><h2>最终确认</h2><p>确认标题、正文、图片和 CTA 后，点击复制HTML。复制前建议在公众号后台再预览一次。</p><button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">复制HTML</button></section>
     <section class="surface"><h2>审核要点</h2><ul>{audit}</ul></section>
   </div>
 </section>
 <section class="surface"><h2>Markdown 正文</h2><pre>{escape(latest['markdown'])}</pre></section>
-<section class="surface"><h2>HTML 源码</h2><pre id="html-source">{escape(latest['html'])}</pre></section>"""
+<details class="surface"><summary><strong>HTML源码</strong></summary><pre id="html-source">{escape(latest['html'])}</pre></details>"""
     return layout("文章预览", body, "x" if latest["generation_mode"] == "api" else None)
 
 
@@ -286,7 +298,7 @@ def render_title_drawer(job_id: int, candidates: list[str]) -> str:
 
 
 def render_rewrite_drawer(job_id: int, original: dict, rewritten: dict | None) -> str:
-    styles = ["更专业", "更营销", "更亲和", "更简洁"]
+    styles = ["更专业", "更营销", "更亲和", "更简洁", "更有科技感"]
     links = "".join(f'<a class="btn secondary" href="/articles/{job_id}/rewrite?style={quote(style)}">{style}</a>' for style in styles)
     rewritten_markdown = rewritten["markdown"] if rewritten else "尚未生成改写版本，请先选择一种改写风格。"
     return f"""
@@ -298,6 +310,8 @@ def render_rewrite_drawer(job_id: int, original: dict, rewritten: dict | None) -
     <div class="version-box"><h3>原版本</h3><pre>{escape(original['markdown'])}</pre></div>
     <div class="version-box"><h3>改写版本</h3><pre>{escape(rewritten_markdown)}</pre></div>
   </div>
+  <a class="btn teal" href="/articles/{job_id}/rewrite?style=采用改写版">采用改写版</a>
+  <a class="btn secondary" href="/articles/{job_id}">保留原文</a>
 </section>"""
 
 
@@ -310,7 +324,7 @@ def render_image_drawer(job_id: int, slots: list[dict], image_assets: list[dict]
     return f"""
 <section id="image-drawer" class="drawer">
   <h2>图片调整</h2>
-  <p>生成文章后自动显示封面图、产品图、案例图。每个图片位都可以从素材库选择器中替换。</p>
+  <p>生成文章后自动显示封面图、产品图、参数图、品牌图。案例图可在素材库选择器中继续补充。每个图片位都可以从素材库选择器中替换。</p>
   <div class="image-slot-grid">{slot_cards}</div>
   <h3 style="margin-top:16px;">素材库选择器</h3>
   <div class="selector-grid">{selector}</div>
@@ -335,6 +349,14 @@ def render_image_slot_card(job_id: int, idx: int, slot: dict, image_assets: list
 </article>"""
 
 
+def render_used_image_list(slots: list[dict]) -> str:
+    items = "".join(
+        f"<li>{escape(slot.get('position', '图片'))}：{escape(Path(slot.get('selected_asset_path') or slot.get('recommended_asset_path') or '推荐候选图片').name)}</li>"
+        for slot in slots
+    )
+    return f"<ul>{items}</ul>"
+
+
 def render_selector_item(asset: dict) -> str:
     return f"""
 <article class="selector-item">
@@ -353,13 +375,23 @@ def asset_id_for_path(image_assets: list[dict], path: str) -> int | None:
 def render_asset_page(conn) -> str:
     assets = list_assets(conn)
     cards = "".join(render_asset_card(asset) for asset in assets) or "<p>暂无素材，请先运行 reindex。</p>"
+    drawers = "".join(render_asset_drawer(asset) for asset in assets)
     body = f"""
 <section class="surface">
   <p class="muted">素材分析进度 · 素材卡片</p>
   <h1>素材库</h1>
-  <p>卡片只展示可用于创作的信息，不暴露本地文件路径。</p>
+  <p>卡片只展示可用于创作的信息，不暴露本地文件路径。点击素材可查看详情，并加入文章、作为封面或作为正文配图。</p>
 </section>
-<section class="asset-grid">{cards}</section>"""
+<section class="surface">
+  <h2>搜索与筛选</h2>
+  <div class="form-grid">
+    <label>搜索素材<input placeholder="搜索素材：K2、直饮机、节日海报、金融解决方案"></label>
+    <label>分类筛选<select><option>全部</option><option>产品图</option><option>海报</option><option>logo</option><option>PDF</option><option>解决方案</option><option>案例</option><option>单页</option></select></label>
+    <label>用途筛选<select><option>全部用途</option><option>封面图</option><option>正文配图</option><option>品牌区</option><option>参数资料</option></select></label>
+  </div>
+</section>
+<section class="asset-grid">{cards}</section>
+{drawers}"""
     return layout("素材库", body)
 
 
@@ -367,19 +399,46 @@ def render_asset_card(asset: dict) -> str:
     name = Path(asset["path"]).name
     keywords = asset.get("keywords", [])[:4]
     chips = "".join(f"<span class='chip'>{escape(word)}</span>" for word in keywords) or "<span class='chip'>待分析</span>"
-    thumb = (
-        f"<img alt='图片缩略图' src='/asset-thumb/{asset['id']}'>"
-        if asset["type"] == "image"
-        else f"<span>图片缩略图<br>{escape(asset['type'].upper())}</span>"
-    )
+    thumb = asset_visual(asset, small=True)
     return f"""
-<article class="asset-card">
+<a class="asset-card" href="#asset-{asset['id']}" style="display:block;text-decoration:none;color:inherit;">
   <div class="thumb">{thumb}</div>
   <h3>{escape(name)}</h3>
   <p><strong>分类</strong>：{escape(asset['category'])}</p>
   <p><strong>关键词</strong>：{chips}</p>
   <p><strong>推荐用途</strong>：{escape(recommended_use(asset))}</p>
-</article>"""
+</a>"""
+
+
+def asset_visual(asset: dict, small: bool = False) -> str:
+    if asset["type"] == "image":
+        return f"<img alt='大图预览' src='/asset-thumb/{asset['id']}'>"
+    if asset["type"] == "pdf":
+        return "<div class='pdf-card'>PDF资料卡<br><span style='font-size:13px;color:#9f1239;'>第一页缩略图待生成</span></div>"
+    return f"<span>{escape(asset['type'].upper())}</span>"
+
+
+def render_asset_drawer(asset: dict) -> str:
+    name = Path(asset["path"]).name
+    keywords = "".join(f"<span class='chip'>{escape(word)}</span>" for word in asset.get("keywords", [])[:8]) or "<span class='chip'>待分析</span>"
+    page_count = asset.get("metadata", {}).get("pages") or "待解析"
+    pdf_meta = f"<p><strong>页数</strong>：{page_count}</p>" if asset["type"] == "pdf" else ""
+    return f"""
+<aside id="asset-{asset['id']}" class="asset-drawer">
+  <a href="#" class="btn secondary" style="float:right;">关闭</a>
+  <h2>素材详情</h2>
+  <div class="thumb" style="height:220px;">{asset_visual(asset)}</div>
+  <h3>大图预览</h3>
+  <p><strong>文件名</strong>：{escape(name)}</p>
+  <p><strong>文件类型</strong>：{escape(asset['type'])}</p>
+  <p><strong>分类</strong>：{escape(asset['category'])}</p>
+  {pdf_meta}
+  <p><strong>关键词</strong>：{keywords}</p>
+  <p><strong>推荐用途</strong>：{escape(recommended_use(asset))}</p>
+  <a class="btn" href="#">加入文章</a>
+  <a class="btn secondary" href="#">作为封面</a>
+  <a class="btn secondary" href="#">作为正文配图</a>
+</aside>"""
 
 
 def recommended_use(asset: dict) -> str:
@@ -398,7 +457,7 @@ def recommended_use(asset: dict) -> str:
 def render_template_page(conn) -> str:
     rows = conn.execute("select * from templates order by id").fetchall()
     cards = "".join(render_template_card(row) for row in rows)
-    return layout("模板", f"<section class='surface'><p class='muted'>模板工作台</p><h1>模板</h1><p>每个模板都带有公众号样式预览，方便答辩展示不同风格。</p></section><section class='cards'>{cards}</section>")
+    return layout("模板", f"<section class='surface'><p class='muted'>模板工作台</p><h1>模板</h1><p>每个模板都带有公众号样式预览，方便运营人员快速切换不同内容风格。</p></section><section class='cards'>{cards}</section>")
 
 
 def render_template_card(row) -> str:
@@ -429,6 +488,8 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
         try:
             if parsed.path == "/":
                 self.respond(render_home_page(conn, self.server.api_key))
+            elif parsed.path == "/new":
+                self.redirect("/articles/new")
             elif parsed.path == "/articles/new":
                 self.respond(render_new_article_page(conn, self.server.api_key))
             elif parsed.path == "/assets":
@@ -464,14 +525,14 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
             elif parsed.path.startswith("/articles/"):
                 self.respond(render_preview_page(conn, int(parsed.path.split("/")[2])))
             else:
-                self.send_error(404, "页面不存在")
+                self.send_error(404, "Not found")
         except Exception as exc:
-            self.send_error(500, str(exc))
+            self.send_error(500, "Server error")
 
     def do_POST(self):
         parsed = urlparse(self.path)
         if parsed.path != "/articles/create":
-            self.send_error(404, "页面不存在")
+            self.send_error(404, "Not found")
             return
         length = int(self.headers.get("Content-Length", "0"))
         data = parse_qs(self.rfile.read(length).decode("utf-8"))

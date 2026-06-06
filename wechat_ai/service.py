@@ -236,7 +236,7 @@ def replace_image(conn: sqlite3.Connection, job_id: int, slot_index: int, select
                 "recommended_asset_path": "",
                 "selected_asset_path": selected_asset_path,
                 "alt_text": "替换配图",
-                "placeholder_text": "配图占位 1",
+                "placeholder_text": "推荐候选图片 1",
             }
         )
     else:

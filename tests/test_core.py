@@ -219,32 +219,65 @@ class WechatAiCoreTests(unittest.TestCase):
             "Step3 选择风格模板",
             "Step4 生成文章",
             "内容类型卡片",
+            "生成中 AI 正在分析素材",
             "标题候选1",
             "标题候选5",
             "采用",
+            "已应用新标题",
             "请选择改写风格",
             "更专业",
             "更营销",
             "更亲和",
             "更简洁",
+            "更有科技感",
             "原版本",
             "改写版本",
+            "采用改写版",
+            "保留原文",
             "封面图",
             "产品图",
-            "案例图",
+            "参数图",
+            "品牌图",
             "更换图片",
             "素材库选择器",
+            "当前文章已使用的图片清单",
             "最终确认",
             "复制HTML",
+            "HTML源码",
         ]:
             self.assertIn(text, new_page + preview)
 
         self.assertIn("<img", generated)
         self.assertIn("Banner图", generated)
         self.assertIn("产品图", generated)
+        self.assertIn("参数图", generated)
+        self.assertIn("品牌图", generated)
         self.assertIn("引用块", generated)
         self.assertIn("CTA按钮", generated)
+        self.assertIn("重点卖点卡片", generated)
         self.assertNotIn("配图占位：请从素材库补充", generated)
+
+    def test_asset_library_has_detail_drawer_filters_and_enterprise_copy(self):
+        from wechat_ai.web import render_asset_page
+
+        conn = self.setup_app()
+        page = render_asset_page(conn)
+        for text in [
+            "搜索素材",
+            "分类筛选",
+            "用途筛选",
+            "素材详情",
+            "大图预览",
+            "加入文章",
+            "作为封面",
+            "作为正文配图",
+            "PDF资料卡",
+            "页数",
+            "推荐用途",
+        ]:
+            self.assertIn(text, page)
+        for bad in ["答辩", "Demo", "演示系统", "图片缩略图 PDF", "000000", ">00<", ">004<"]:
+            self.assertNotIn(bad, page)
 
     def test_cli_input_examples_are_valid_json(self):
         for path in [Path("examples/new_product.json"), Path("examples/holiday_campaign.json")]:

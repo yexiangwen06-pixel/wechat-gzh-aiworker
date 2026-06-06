@@ -68,8 +68,46 @@ def extract_docx_text(path: Path) -> str:
 
 
 def keywords_for(path: Path, text: str) -> list[str]:
-    tokens = set(re.findall(r"[A-Za-z0-9]+|[\u4e00-\u9fff]{2,}", path.stem + " " + text))
-    return sorted(token for token in tokens if len(token) >= 2)[:20]
+    raw = set(re.findall(r"[A-Za-z][A-Za-z0-9]{1,}|[\u4e00-\u9fffA-Za-z0-9]{2,}", path.stem + " " + text))
+    preferred: list[str] = []
+    joined = path.stem + " " + text
+    domain_terms = [
+        "K2",
+        "H7",
+        "P2",
+        "直饮机",
+        "企业饮水",
+        "中央厨房",
+        "金融解决方案",
+        "节日海报",
+        "产品DM",
+        "朴道",
+        "大流量",
+        "动态蛋白纳滤",
+        "解决方案",
+        "产品单页",
+        "促销海报",
+    ]
+    for term in domain_terms:
+        if term in joined and term not in preferred:
+            preferred.append(term)
+    cleaned = []
+    for token in raw:
+        if token.isdigit():
+            continue
+        if len(token) < 2:
+            continue
+        if re.fullmatch(r"0+[0-9]*", token):
+            continue
+        if token.lower() in {"pdf", "jpg", "png", "docx", "jpeg"}:
+            continue
+        if "\ufffd" in token:
+            continue
+        cleaned.append(token)
+    for token in sorted(cleaned):
+        if token not in preferred:
+            preferred.append(token)
+    return preferred[:20]
 
 
 def index_assets(conn: sqlite3.Connection, root_dir: str | Path) -> int:

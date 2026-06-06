@@ -8,7 +8,8 @@ def markdown_to_wechat_html(markdown: str, image_slots: list[dict] | None = None
     title, paragraphs, sections = parse_markdown(markdown)
     banner = slot_by_position(image_slots, "封面图") or first_slot(image_slots)
     product = slot_by_position(image_slots, "产品图") or first_slot(image_slots)
-    case = slot_by_position(image_slots, "案例图") or first_slot(image_slots)
+    param = slot_by_position(image_slots, "参数图") or first_slot(image_slots)
+    logo = slot_by_position(image_slots, "品牌图") or first_slot(image_slots)
     first_para = paragraphs[0] if paragraphs else "围绕企业真实饮水场景，结合素材库自动生成公众号文章。"
     parts = [
         '<section style="max-width:677px;margin:0 auto;padding:0 0 20px;color:#1f2937;font-size:16px;line-height:1.85;background:#ffffff;">',
@@ -32,7 +33,11 @@ def markdown_to_wechat_html(markdown: str, image_slots: list[dict] | None = None
             "</section></section>",
             '<section style="height:1px;background:#dbe3ef;margin:22px 18px;"></section>',
             '<section style="margin:0 18px 22px;display:block;">',
-            render_image(case, "案例图", wide=False),
+            render_image(param, "参数图", wide=False),
+            '<section style="margin:12px 0;padding:14px 16px;background:#f8fafc;border:1px solid #dbe3ef;border-radius:8px;"><strong>重点卖点卡片</strong><br>围绕流量、滤芯、水质管理和服务效率提炼成可阅读的卖点模块。</section>',
+            "</section>",
+            '<section style="margin:0 18px 22px;display:block;">',
+            render_image(logo, "品牌图", wide=False),
             '<p style="margin:12px 0;text-align:justify;">图片+文字混排：AI 会把素材库图片与正文段落组合展示，运营人员可在预览页继续替换图片。</p>',
             "</section>",
             '<section style="margin:24px 18px 0;padding:14px 18px;background:#1264d8;color:#fff;text-align:center;border-radius:8px;font-weight:800;">CTA按钮：点击阅读原文或联系顾问，获取企业定制方案</section>',
