@@ -1,12 +1,22 @@
 from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from .assets import list_assets
 from .config import generation_mode_label, get_api_key
 from .db import connect, init_db, loads
-from .service import create_article, get_article, list_articles, optimize_title, replace_image, rewrite_article
+from .generator import title_candidates
+from .service import (
+    adopt_title,
+    article_payload,
+    create_article,
+    get_article,
+    list_articles,
+    optimize_title,
+    replace_image,
+    rewrite_article,
+)
 
 
 def layout(title: str, body: str, api_key: str | None = None) -> str:
@@ -60,6 +70,10 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .chip{{display:inline-flex;margin:3px 4px 3px 0;padding:4px 8px;border-radius:999px;background:#eef4ff;color:#2457a6;font-size:12px;font-weight:700;}}
     .wizard{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0;}}
     .wizard-step{{padding:14px;border-top:4px solid var(--blue);}}
+    .step-block{{padding:18px;margin:14px 0;border-left:5px solid var(--blue);}}
+    .option-grid{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px;}}
+    .option-card{{border:1px solid var(--line);border-radius:8px;padding:14px;background:#fbfdff;cursor:pointer;}}
+    .option-card input{{width:auto;margin-right:8px;}}
     form.surface{{margin-top:14px;}}
     label{{display:block;font-weight:800;margin:12px 0 6px;}}
     input,select,textarea{{width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:10px;font:inherit;background:#fff;}}
@@ -78,7 +92,20 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .wechat-mini .line{{height:8px;background:#e6edf6;border-radius:999px;margin:8px 0;}}
     .wechat-mini .cta{{background:var(--blue);color:#fff;border-radius:6px;text-align:center;padding:8px;margin-top:10px;font-weight:800;}}
     .recommend{{border-left:4px solid var(--teal);padding:10px 12px;background:#eefaf8;border-radius:6px;margin:10px 0;}}
-    @media (max-width:900px){{.hero,.preview-grid,.form-grid{{grid-template-columns:1fr}}.metrics,.cards,.asset-grid,.wizard{{grid-template-columns:1fr}}}}
+    .workflow{{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:0 0 18px;}}
+    .workflow span{{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px;text-align:center;font-size:12px;font-weight:800;color:#42526a;}}
+    .workflow .active{{background:#e9f7f5;color:#08735f;border-color:#8fd8cc;}}
+    .drawer{{position:relative;background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 14px 34px rgba(23,40,72,.07);}}
+    .candidate{{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #edf2f7;padding:10px 0;}}
+    .candidate:last-child{{border-bottom:0;}}
+    .style-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}}
+    .version-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}}
+    .version-box{{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fbfdff;max-height:260px;overflow:auto;}}
+    .image-slot-grid{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}}
+    .image-slot-card{{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff;}}
+    .selector-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px;}}
+    .selector-item{{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfdff;}}
+    @media (max-width:900px){{.hero,.preview-grid,.form-grid,.version-grid{{grid-template-columns:1fr}}.metrics,.cards,.asset-grid,.wizard,.option-grid,.style-grid,.image-slot-grid,.selector-grid,.workflow{{grid-template-columns:1fr}}}}
   </style>
 </head>
 <body>
@@ -150,30 +177,47 @@ def render_new_article_page(conn, api_key: str | None = None) -> str:
 <section class="surface">
   <p class="muted">向导式流程</p>
   <h1>新建公众号文章</h1>
-  <p>像和一位内容 AI 员工协作：先定类型，再输入素材线索，选择风格，最后生成可预览文章。</p>
-</section>
-<section class="wizard">
-  <div class="wizard-step"><h3>1 选择内容类型</h3><p>新品上市或节日促销，决定文章结构。</p></div>
-  <div class="wizard-step"><h3>2 填写内容</h3><p>输入产品、活动、卖点、语气和 CTA。</p></div>
-  <div class="wizard-step"><h3>3 选择风格模板</h3><p>专业科技、促销活动或简洁品牌。</p></div>
-  <div class="wizard-step"><h3>4 生成</h3><p>AI 自动匹配素材并生成预览。</p></div>
+  <p>像和一位内容 AI 员工协作：按 Step1 到 Step4 完成一次内容生成，而不是填写数据库表单。</p>
 </section>
 <form class="surface" method="post" action="/articles/create">
-  <div class="form-grid">
-    <div><label>内容类型</label><select name="content_type"><option value="new_product">新品上市</option><option value="holiday_campaign">节日促销</option></select></div>
-    <div><label>风格模板</label><select name="template_id"><option value="1">专业科技风 · 新品上市模板</option><option value="2">促销活动风 · 节日促销模板</option><option value="3">简洁品牌风 · 品牌模板</option></select></div>
-  </div>
-  <label>产品名或活动名</label><input name="name" value="名士K2智能直饮机">
-  <label>核心卖点或促销信息</label><textarea name="key_points">2000G大流量
+  <section class="surface step-block">
+    <p class="muted">Step1 选择内容类型</p>
+    <h2>内容类型卡片</h2>
+    <div class="option-grid">
+      <label class="option-card"><input type="radio" name="content_type" value="new_product" checked><strong>新品上市</strong><p>突出产品卖点、技术亮点和企业采购价值。</p></label>
+      <label class="option-card"><input type="radio" name="content_type" value="holiday_campaign"><strong>节日促销</strong><p>突出活动节点、优惠信息和咨询转化。</p></label>
+      <label class="option-card"><input type="radio" name="content_type" value="new_product"><strong>品牌科普</strong><p>暂用新品模板，适合答辩展示后续扩展方向。</p></label>
+    </div>
+  </section>
+  <section class="surface step-block">
+    <p class="muted">Step2 填写内容</p>
+    <h2>告诉 AI 员工这次要写什么</h2>
+    <label>产品名或活动名</label><input name="name" value="名士K2智能直饮机">
+    <label>核心卖点或促销信息</label><textarea name="key_points">2000G大流量
 DPM动态蛋白纳滤
 IoT智能管理</textarea>
-  <div class="form-grid">
-    <div><label>目标人群</label><input name="target_audience" value="企业采购决策者"></div>
-    <div><label>语气</label><input name="tone" value="专业、科技感"></div>
-  </div>
-  <label>配图要求</label><input name="image_requirement" value="产品图3张 + 功能示意图">
-  <label>CTA</label><input name="cta" value="预约企业饮水方案咨询">
-  <button type="submit">生成</button>
+    <div class="form-grid">
+      <div><label>目标人群</label><input name="target_audience" value="企业采购决策者"></div>
+      <div><label>语气</label><input name="tone" value="专业、科技感"></div>
+    </div>
+    <label>配图要求</label><input name="image_requirement" value="封面图 + 产品图 + 案例图">
+    <label>CTA</label><input name="cta" value="预约企业饮水方案咨询">
+  </section>
+  <section class="surface step-block">
+    <p class="muted">Step3 选择风格模板</p>
+    <h2>选择公众号排版和表达风格</h2>
+    <div class="option-grid">
+      <label class="option-card"><input type="radio" name="template_id" value="1" checked><strong>专业科技风</strong><p>适合新品上市、参数讲解和企业采购。</p></label>
+      <label class="option-card"><input type="radio" name="template_id" value="2"><strong>促销活动风</strong><p>适合节日节点、限时优惠和活动转化。</p></label>
+      <label class="option-card"><input type="radio" name="template_id" value="3"><strong>简洁品牌风</strong><p>适合品牌形象、服务介绍和轻量推文。</p></label>
+    </div>
+  </section>
+  <section class="surface step-block">
+    <p class="muted">Step4 生成文章</p>
+    <h2>生成后进入优化工作流</h2>
+    <p>AI 将自动匹配素材库图片，生成接近公众号最终效果的预览，并进入标题优化、AI改写、图片调整和最终确认流程。</p>
+    <button type="submit">生成文章</button>
+  </section>
 </form>"""
     return layout("新建文章", body, api_key)
 
@@ -181,23 +225,25 @@ IoT智能管理</textarea>
 def render_preview_page(conn, job_id: int) -> str:
     article = get_article(conn, job_id)
     latest = article["latest"]
+    original = article["versions"][0] if article["versions"] else latest
+    rewritten = next((version for version in reversed(article["versions"]) if version["version_type"] == "rewrite"), None)
     quality = latest["quality_score"] or {}
-    slots = "".join(
-        f"<li><strong>{escape(slot.get('position',''))}</strong>：{escape(Path(slot.get('selected_asset_path') or slot.get('recommended_asset_path') or '待补充').name)}</li>"
-        for slot in latest["image_slots"]
-    )
     audit = "".join(f"<li>{escape(note)}</li>" for note in latest["audit_notes"])
     suggestions = "".join(f"<span class='chip'>{escape(item)}</span>" for item in quality.get("suggestions", [])[:3])
+    payload = article_payload(article["job"])
+    candidates = title_candidates(payload)
+    image_assets = [asset for asset in list_assets(conn, limit=80) if asset["type"] == "image"]
     body = f"""
+{render_workflow()}
 <section class="hero">
   <div class="surface">
     <p class="muted">文章预览 · 智能匹配结果</p>
     <h1>{escape(latest['title'])}</h1>
-    <p>AI 已完成素材匹配、结构生成、公众号样式渲染和质量评分。</p>
+    <p>AI 已完成生成，接下来按工作流完成标题优化、AI改写、图片调整、最终确认和复制HTML。</p>
     <button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">一键复制HTML</button>
-    <a class="btn secondary" href="/articles/{job_id}/optimize-title">标题优化</a>
-    <a class="btn secondary" href="/articles/{job_id}/rewrite">AI改写</a>
-    <a class="btn secondary" href="/articles/{job_id}/replace-image">图片替换</a>
+    <a class="btn secondary" href="#title-drawer">标题优化</a>
+    <a class="btn secondary" href="#rewrite-drawer">AI改写</a>
+    <a class="btn secondary" href="#image-drawer">图片调整</a>
   </div>
   <aside class="ai-panel">
     <div class="ai-state"><strong>AI状态面板</strong><span class="badge {'real' if latest['generation_mode'] == 'api' else 'simulation'}">{latest['generation_mode_label']}</span></div>
@@ -206,16 +252,102 @@ def render_preview_page(conn, job_id: int) -> str:
     <div class="recommend">推荐内容提示：{suggestions or '建议检查配图和 CTA 后复制 HTML。'}</div>
   </aside>
 </section>
+{render_title_drawer(job_id, candidates)}
+{render_rewrite_drawer(job_id, original, rewritten)}
+{render_image_drawer(job_id, latest["image_slots"], image_assets)}
 <section class="preview-grid">
   <div class="surface"><h2>公众号样式预览</h2><div class="preview">{latest['html']}</div></div>
   <div>
-    <section class="surface"><h2>智能匹配结果</h2><p>配图清单</p><ul>{slots}</ul></section>
+    <section class="surface"><h2>最终确认</h2><p>确认标题、正文、图片和 CTA 后，点击复制HTML。复制前建议在公众号后台再预览一次。</p><button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">复制HTML</button></section>
     <section class="surface"><h2>审核要点</h2><ul>{audit}</ul></section>
   </div>
 </section>
 <section class="surface"><h2>Markdown 正文</h2><pre>{escape(latest['markdown'])}</pre></section>
 <section class="surface"><h2>HTML 源码</h2><pre id="html-source">{escape(latest['html'])}</pre></section>"""
     return layout("文章预览", body, "x" if latest["generation_mode"] == "api" else None)
+
+
+def render_workflow() -> str:
+    steps = ["创建", "生成", "标题优化", "AI改写", "图片调整", "最终确认", "复制HTML"]
+    return '<section class="workflow">' + "".join(f'<span class="active">{step}</span>' for step in steps) + "</section>"
+
+
+def render_title_drawer(job_id: int, candidates: list[str]) -> str:
+    rows = "".join(
+        f"""
+        <div class="candidate">
+          <div><strong>标题候选{idx}</strong><p>{escape(title)}</p></div>
+          <a class="btn secondary" href="/articles/{job_id}/adopt-title?title={quote(title)}">采用</a>
+        </div>
+        """
+        for idx, title in enumerate(candidates, start=1)
+    )
+    return f'<section id="title-drawer" class="drawer"><h2>标题优化</h2><p>点击“采用”即可切换标题。</p>{rows}</section>'
+
+
+def render_rewrite_drawer(job_id: int, original: dict, rewritten: dict | None) -> str:
+    styles = ["更专业", "更营销", "更亲和", "更简洁"]
+    links = "".join(f'<a class="btn secondary" href="/articles/{job_id}/rewrite?style={quote(style)}">{style}</a>' for style in styles)
+    rewritten_markdown = rewritten["markdown"] if rewritten else "尚未生成改写版本，请先选择一种改写风格。"
+    return f"""
+<section id="rewrite-drawer" class="drawer">
+  <h2>AI改写</h2>
+  <p>请选择改写风格：</p>
+  <div class="style-grid">{links}</div>
+  <div class="version-grid" style="margin-top:12px;">
+    <div class="version-box"><h3>原版本</h3><pre>{escape(original['markdown'])}</pre></div>
+    <div class="version-box"><h3>改写版本</h3><pre>{escape(rewritten_markdown)}</pre></div>
+  </div>
+</section>"""
+
+
+def render_image_drawer(job_id: int, slots: list[dict], image_assets: list[dict]) -> str:
+    slot_cards = "".join(render_image_slot_card(job_id, idx, slot, image_assets) for idx, slot in enumerate(slots))
+    if not image_assets:
+        selector = '<p>未找到可用图片。推荐素材列表为空，请先在素材库中补充图片。</p>'
+    else:
+        selector = "".join(render_selector_item(asset) for asset in image_assets[:8])
+    return f"""
+<section id="image-drawer" class="drawer">
+  <h2>图片调整</h2>
+  <p>生成文章后自动显示封面图、产品图、案例图。每个图片位都可以从素材库选择器中替换。</p>
+  <div class="image-slot-grid">{slot_cards}</div>
+  <h3 style="margin-top:16px;">素材库选择器</h3>
+  <div class="selector-grid">{selector}</div>
+</section>"""
+
+
+def render_image_slot_card(job_id: int, idx: int, slot: dict, image_assets: list[dict]) -> str:
+    selected = slot.get("selected_asset_path") or slot.get("recommended_asset_path") or ""
+    asset_id = asset_id_for_path(image_assets, selected)
+    thumb = (
+        f'<img alt="{escape(slot.get("position", "图片"))}" src="/asset-thumb/{asset_id}">'
+        if asset_id
+        else "<span>推荐素材列表</span>"
+    )
+    first_replacement = quote(image_assets[0]["path"]) if image_assets else ""
+    return f"""
+<article class="image-slot-card">
+  <h3>{escape(slot.get('position', f'图片位{idx + 1}'))}</h3>
+  <div class="thumb">{thumb}</div>
+  <p class="muted">当前推荐图片缩略图</p>
+  <a class="btn secondary" href="/articles/{job_id}/replace-image?slot={idx}&path={first_replacement}">更换图片</a>
+</article>"""
+
+
+def render_selector_item(asset: dict) -> str:
+    return f"""
+<article class="selector-item">
+  <div class="thumb"><img alt="素材缩略图" src="/asset-thumb/{asset['id']}"></div>
+  <p>{escape(Path(asset['path']).name)}</p>
+</article>"""
+
+
+def asset_id_for_path(image_assets: list[dict], path: str) -> int | None:
+    for asset in image_assets:
+        if asset["path"] == path:
+            return int(asset["id"])
+    return None
 
 
 def render_asset_page(conn) -> str:
@@ -305,17 +437,29 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
                 self.respond(render_template_page(conn))
             elif parsed.path.startswith("/asset-thumb/"):
                 self.respond_asset_thumb(conn, int(parsed.path.rsplit("/", 1)[-1]))
+            elif parsed.path == "/asset-file":
+                query = parse_qs(parsed.query)
+                self.respond_asset_file(unquote(query.get("path", [""])[0]))
             elif parsed.path.endswith("/optimize-title"):
                 job_id = int(parsed.path.split("/")[2])
                 optimize_title(conn, job_id, self.server.api_key)
                 self.redirect(f"/articles/{job_id}")
+            elif parsed.path.endswith("/adopt-title"):
+                job_id = int(parsed.path.split("/")[2])
+                query = parse_qs(parsed.query)
+                adopt_title(conn, job_id, query.get("title", [""])[0], self.server.api_key)
+                self.redirect(f"/articles/{job_id}")
             elif parsed.path.endswith("/rewrite"):
                 job_id = int(parsed.path.split("/")[2])
-                rewrite_article(conn, job_id, "更简洁", self.server.api_key)
+                query = parse_qs(parsed.query)
+                rewrite_article(conn, job_id, query.get("style", ["更简洁"])[0], self.server.api_key)
                 self.redirect(f"/articles/{job_id}")
             elif parsed.path.endswith("/replace-image"):
                 job_id = int(parsed.path.split("/")[2])
-                replace_image(conn, job_id, 0, "手动替换：请在素材库选择新图片")
+                query = parse_qs(parsed.query)
+                slot = int(query.get("slot", ["0"])[0])
+                path = query.get("path", [""])[0] or "手动替换：请在素材库选择新图片"
+                replace_image(conn, job_id, slot, path)
                 self.redirect(f"/articles/{job_id}")
             elif parsed.path.startswith("/articles/"):
                 self.respond(render_preview_page(conn, int(parsed.path.split("/")[2])))
@@ -359,7 +503,7 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
     def respond_asset_thumb(self, conn, asset_id: int):
         row = conn.execute("select path, type from assets where id = ?", (asset_id,)).fetchone()
         if not row or row["type"] != "image" or not Path(row["path"]).exists():
-            self.send_error(404, "缩略图不存在")
+            self.respond_svg_placeholder("image")
             return
         data = Path(row["path"]).read_bytes()
         suffix = Path(row["path"]).suffix.lower().lstrip(".") or "jpeg"
@@ -369,6 +513,34 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def respond_asset_file(self, path: str):
+        file_path = Path(path)
+        if not path or not file_path.exists() or file_path.suffix.lower() not in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}:
+            self.respond_svg_placeholder("image")
+            return
+        data = file_path.read_bytes()
+        suffix = file_path.suffix.lower().lstrip(".") or "jpeg"
+        mime = "image/jpeg" if suffix in {"jpg", "jpeg"} else f"image/{suffix}"
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def respond_svg_placeholder(self, label: str):
+        svg = (
+            "<svg xmlns='http://www.w3.org/2000/svg' width='900' height='480'>"
+            "<rect width='100%' height='100%' fill='#eef3f8'/>"
+            "<text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' "
+            "font-family='Arial' font-size='28' fill='#64748b'>"
+            f"{escape(label)}</text></svg>"
+        ).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "image/svg+xml")
+        self.send_header("Content-Length", str(len(svg)))
+        self.end_headers()
+        self.wfile.write(svg)
 
     def redirect(self, path: str):
         self.send_response(303)

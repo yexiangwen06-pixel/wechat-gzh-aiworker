@@ -204,6 +204,17 @@ def optimize_title(conn: sqlite3.Connection, job_id: int, api_key: str | None = 
     return titles
 
 
+def adopt_title(conn: sqlite3.Connection, job_id: int, title: str, api_key: str | None = None) -> dict:
+    article = get_article(conn, job_id)
+    latest = dict(article["latest"])
+    latest["title"] = title
+    latest["audit_notes"] = [f"已采用标题：{title}"] + latest["audit_notes"]
+    latest["generation_mode"] = "api" if api_key else "simulation"
+    latest["version_id"] = save_version(conn, job_id, latest, "title_optimized")
+    conn.commit()
+    return latest
+
+
 def rewrite_article(conn: sqlite3.Connection, job_id: int, rewrite_hint: str, api_key: str | None = None) -> dict:
     article = get_article(conn, job_id)
     payload = article_payload(article["job"])
@@ -229,7 +240,11 @@ def replace_image(conn: sqlite3.Connection, job_id: int, slot_index: int, select
             }
         )
     else:
-        slots[min(slot_index, len(slots) - 1)]["selected_asset_path"] = selected_asset_path
+        selected = slots[min(slot_index, len(slots) - 1)]
+        selected["selected_asset_path"] = selected_asset_path
+        row = conn.execute("select id from assets where path = ?", (selected_asset_path,)).fetchone()
+        if row:
+            selected["asset_id"] = row["id"]
     latest["image_slots"] = slots
     latest["html"] = markdown_to_wechat_html(latest["markdown"], slots)
     latest["audit_notes"] = ["已替换图片占位，请在公众号后台上传对应图片。"] + latest["audit_notes"]

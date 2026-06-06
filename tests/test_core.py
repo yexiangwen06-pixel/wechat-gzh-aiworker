@@ -91,7 +91,9 @@ class WechatAiCoreTests(unittest.TestCase):
         self.assertEqual(article["generation_mode_label"], "模拟生成")
         self.assertIn("名士K2", article["title"])
         self.assertIn("<section", article["html"])
-        self.assertIn("配图占位", article["html"])
+        self.assertIn("<img", article["html"])
+        self.assertIn("Banner图", article["html"])
+        self.assertIn("CTA按钮", article["html"])
         self.assertGreaterEqual(len(article["image_slots"]), 1)
         self.assertGreaterEqual(article["quality_score"]["overall_score"], 60)
 
@@ -187,6 +189,62 @@ class WechatAiCoreTests(unittest.TestCase):
             self.assertIn(text, joined)
         self.assertNotIn("C:\\", pages["assets"])
         self.assertNotIn("/tmp/", pages["assets"])
+
+    def test_preview_supports_complete_content_optimization_workflow(self):
+        from wechat_ai.service import create_article
+        from wechat_ai.web import render_new_article_page, render_preview_page
+
+        conn = self.setup_app()
+        article = create_article(
+            conn,
+            {
+                "content_type": "new_product",
+                "product_name": "名士K2智能直饮机",
+                "key_points": ["2000G大流量", "DPM动态蛋白纳滤"],
+                "target_audience": "企业采购决策者",
+                "tone": "专业",
+                "image_requirement": "封面图+产品图+案例图",
+                "cta": "预约咨询",
+                "template_id": 1,
+            },
+            api_key=None,
+        )
+        new_page = render_new_article_page(conn, api_key=None)
+        preview = render_preview_page(conn, article["job_id"])
+        generated = article["html"]
+
+        for text in [
+            "Step1 选择内容类型",
+            "Step2 填写内容",
+            "Step3 选择风格模板",
+            "Step4 生成文章",
+            "内容类型卡片",
+            "标题候选1",
+            "标题候选5",
+            "采用",
+            "请选择改写风格",
+            "更专业",
+            "更营销",
+            "更亲和",
+            "更简洁",
+            "原版本",
+            "改写版本",
+            "封面图",
+            "产品图",
+            "案例图",
+            "更换图片",
+            "素材库选择器",
+            "最终确认",
+            "复制HTML",
+        ]:
+            self.assertIn(text, new_page + preview)
+
+        self.assertIn("<img", generated)
+        self.assertIn("Banner图", generated)
+        self.assertIn("产品图", generated)
+        self.assertIn("引用块", generated)
+        self.assertIn("CTA按钮", generated)
+        self.assertNotIn("配图占位：请从素材库补充", generated)
 
     def test_cli_input_examples_are_valid_json(self):
         for path in [Path("examples/new_product.json"), Path("examples/holiday_campaign.json")]:

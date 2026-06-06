@@ -1,4 +1,4 @@
-from .assets import search_assets
+from .assets import list_assets, search_assets
 from .config import generation_mode_label
 from .render import markdown_to_wechat_html
 
@@ -30,7 +30,9 @@ def build_simulation_article(conn, payload: dict, rewrite_hint: str | None = Non
     if isinstance(key_points, str):
         key_points = [part.strip() for part in key_points.split(",") if part.strip()]
     query = " ".join([name, *key_points]) or name
-    assets = search_assets(conn, query, limit=5)
+    assets = search_assets(conn, query, limit=8)
+    if not any(asset["type"] == "image" for asset in assets):
+        assets = assets + [asset for asset in list_assets(conn) if asset["type"] == "image"][:6]
     image_slots = make_image_slots(assets, payload)
     if content_type == "holiday_campaign":
         title = f"{name}企业饮水活动方案｜限时优惠，健康饮水更省心"
@@ -115,29 +117,30 @@ def holiday_markdown(payload: dict, key_points: list[str], assets: list[dict]) -
 
 def make_image_slots(assets: list[dict], payload: dict) -> list[dict]:
     images = [asset for asset in assets if asset["type"] == "image"]
-    if not images:
-        images = assets[:1]
+    positions = ["封面图", "产品图", "案例图"]
     slots = []
-    for idx, asset in enumerate(images[:3], start=1):
+    for idx, asset in enumerate(images[:3]):
         slots.append(
             {
-                "position": f"配图{idx}",
+                "position": positions[idx],
+                "asset_id": asset.get("id"),
                 "recommended_asset_path": asset["path"],
                 "selected_asset_path": asset["path"],
                 "alt_text": f"{payload.get('product_name') or payload.get('occasion') or '文章'}配图",
-                "placeholder_text": f"配图占位 {idx}",
+                "placeholder_text": positions[idx],
             }
         )
     if not slots:
-        slots.append(
-            {
-                "position": "开头配图",
-                "recommended_asset_path": "",
-                "selected_asset_path": "",
-                "alt_text": "待补充配图",
-                "placeholder_text": "配图占位：请从素材库补充",
-            }
-        )
+        for position in positions:
+            slots.append(
+                {
+                    "position": position,
+                    "recommended_asset_path": "",
+                    "selected_asset_path": "",
+                    "alt_text": f"{position}待补充",
+                    "placeholder_text": position,
+                }
+            )
     return slots
 
 
