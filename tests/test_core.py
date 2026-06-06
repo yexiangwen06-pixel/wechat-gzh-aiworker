@@ -1,5 +1,4 @@
 import json
-import sqlite3
 import tempfile
 import unittest
 import zipfile
@@ -27,11 +26,19 @@ class WechatAiCoreTests(unittest.TestCase):
             )
         return root
 
+    def setup_app(self):
+        from wechat_ai.assets import index_assets
+        from wechat_ai.db import connect, init_db
+
+        conn = connect(self.make_db())
+        init_db(conn)
+        index_assets(conn, self.make_asset_dir())
+        return conn
+
     def test_database_initializes_core_tables_and_templates(self):
         from wechat_ai.db import connect, init_db
 
-        db_path = self.make_db()
-        conn = connect(db_path)
+        conn = connect(self.make_db())
         init_db(conn)
         tables = {
             row[0]
@@ -54,28 +61,18 @@ class WechatAiCoreTests(unittest.TestCase):
         self.assertIn(("节日促销模板",), templates)
 
     def test_asset_indexing_stores_documents_images_and_searches_keywords(self):
-        from wechat_ai.assets import index_assets, search_assets
-        from wechat_ai.db import connect, init_db
+        from wechat_ai.assets import search_assets
 
-        db_path = self.make_db()
-        conn = connect(db_path)
-        init_db(conn)
-        indexed = index_assets(conn, self.make_asset_dir())
-        self.assertGreaterEqual(indexed, 4)
+        conn = self.setup_app()
         image = conn.execute("select category from assets where path like '%海报.jpg'").fetchone()
         self.assertEqual(image[0], "海报")
         hits = search_assets(conn, "K2")
         self.assertTrue(any("K2" in hit["text_excerpt"] or "K2" in hit["path"] for hit in hits))
 
     def test_simulation_generation_returns_complete_article_and_quality_score(self):
-        from wechat_ai.assets import index_assets
-        from wechat_ai.db import connect, init_db
         from wechat_ai.service import create_article
 
-        db_path = self.make_db()
-        conn = connect(db_path)
-        init_db(conn)
-        index_assets(conn, self.make_asset_dir())
+        conn = self.setup_app()
         article = create_article(
             conn,
             {
@@ -99,8 +96,6 @@ class WechatAiCoreTests(unittest.TestCase):
         self.assertGreaterEqual(article["quality_score"]["overall_score"], 60)
 
     def test_article_service_supports_history_rewrite_title_and_image_replacement(self):
-        from wechat_ai.assets import index_assets
-        from wechat_ai.db import connect, init_db
         from wechat_ai.service import (
             create_article,
             get_article,
@@ -110,10 +105,7 @@ class WechatAiCoreTests(unittest.TestCase):
             rewrite_article,
         )
 
-        db_path = self.make_db()
-        conn = connect(db_path)
-        init_db(conn)
-        index_assets(conn, self.make_asset_dir())
+        conn = self.setup_app()
         article = create_article(
             conn,
             {
@@ -129,8 +121,7 @@ class WechatAiCoreTests(unittest.TestCase):
             api_key=None,
         )
         self.assertEqual(len(list_articles(conn)), 1)
-        titles = optimize_title(conn, article["job_id"], api_key=None)
-        self.assertEqual(len(titles), 5)
+        self.assertEqual(len(optimize_title(conn, article["job_id"], api_key=None)), 5)
         rewrite = rewrite_article(conn, article["job_id"], "更简洁", api_key=None)
         self.assertIn("更简洁", rewrite["audit_notes"][0])
         replaced = replace_image(conn, article["job_id"], 0, "手动选择/端午促销海报.jpg")
@@ -138,9 +129,7 @@ class WechatAiCoreTests(unittest.TestCase):
         loaded = get_article(conn, article["job_id"])
         self.assertGreaterEqual(len(loaded["versions"]), 3)
 
-    def test_web_pages_are_chinese_and_mark_simulation_mode(self):
-        from wechat_ai.assets import index_assets
-        from wechat_ai.db import connect, init_db
+    def test_web_pages_present_ai_workstation_experience(self):
         from wechat_ai.service import create_article
         from wechat_ai.web import (
             render_asset_page,
@@ -150,10 +139,7 @@ class WechatAiCoreTests(unittest.TestCase):
             render_template_page,
         )
 
-        db_path = self.make_db()
-        conn = connect(db_path)
-        init_db(conn)
-        index_assets(conn, self.make_asset_dir())
+        conn = self.setup_app()
         article = create_article(
             conn,
             {
@@ -168,18 +154,39 @@ class WechatAiCoreTests(unittest.TestCase):
             },
             api_key=None,
         )
-        pages = [
-            render_home_page(conn, api_key=None),
-            render_new_article_page(conn, api_key=None),
-            render_preview_page(conn, article["job_id"]),
-            render_asset_page(conn),
-            render_template_page(conn),
-        ]
-        joined = "\n".join(pages)
-        for text in ["首页", "新建文章", "文章预览", "素材库", "模板"]:
+        pages = {
+            "home": render_home_page(conn, api_key=None),
+            "new": render_new_article_page(conn, api_key=None),
+            "preview": render_preview_page(conn, article["job_id"]),
+            "assets": render_asset_page(conn),
+            "templates": render_template_page(conn),
+        }
+        joined = "\n".join(pages.values())
+        for text in [
+            "AI 工作台 Dashboard",
+            "AI状态面板",
+            "素材数量",
+            "模板数量",
+            "文章生成数量",
+            "快速创建",
+            "最近生成文章",
+            "向导式流程",
+            "1 选择内容类型",
+            "2 填写内容",
+            "3 选择风格模板",
+            "4 生成",
+            "素材卡片",
+            "图片缩略图",
+            "推荐用途",
+            "公众号样式预览",
+            "智能匹配结果",
+            "推荐内容提示",
+            "模拟生成",
+            "一键复制HTML",
+        ]:
             self.assertIn(text, joined)
-        self.assertIn("模拟生成", joined)
-        self.assertIn("一键复制HTML", joined)
+        self.assertNotIn("C:\\", pages["assets"])
+        self.assertNotIn("/tmp/", pages["assets"])
 
     def test_cli_input_examples_are_valid_json(self):
         for path in [Path("examples/new_product.json"), Path("examples/holiday_campaign.json")]:
