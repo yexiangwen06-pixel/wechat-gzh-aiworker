@@ -1,243 +1,336 @@
-# WeChat Official Account Content AI Design
+# 微信公众号内容生成与排版 AI 员工设计规格
 
-## Background
+## 1. 项目背景
 
-Operations staff publish 3-5 WeChat Official Account articles each week. A single article can take 2-3 hours across topic framing, writing, image selection, and formatting. Existing paid editors reduce some formatting work, but still require manual operation and recurring membership costs.
+运营人员每周需要发布 3-5 篇微信公众号文章。一篇文章从选题、撰写、配图到排版通常需要 2-3 小时。现有编辑器能减少部分排版工作，但仍需要人工操作，并存在会员成本。
 
-This project builds a local AI content workstation for WeChat Official Account articles. The first version should help operations staff provide only basic article information, then automatically generate article copy, WeChat-compatible HTML, image placeholders, image recommendations, title options, rewrite variants, and quality scoring.
+本项目要构建一个本地 Web 内容工作台。运营人员只输入基础信息，系统自动读取素材库，生成公众号文章、标题候选、Markdown 正文、公众号 HTML、配图占位、配图清单、审核要点和文章质量评分。
 
-## Confirmed Product Direction
+## 2. 产品定位
 
-The selected direction is an automated content workstation, not a simple demo and not a fully autonomous publishing system.
+第一版选择“自动化内容工作台”方向，而不是简单脚本，也不是全自动发布系统。
 
-The workstation includes both:
+系统包含两个入口：
 
-- A reusable command-line core for indexing assets and generating articles.
-- A local web workstation for operations staff to create, preview, improve, and reuse articles.
+- 命令行核心：用于素材索引、文章生成、质量评分，方便测试和自动化调用。
+- 本地 Web 工作台：用于企业导师、答辩和运营人员演示，包括页面填写、文章预览、一键复制 HTML、AI 改写、标题优化和图片替换。
 
-The first version must work without external publishing permissions. It should keep a human review and manual publishing step by letting users copy generated HTML into the WeChat backend.
+第一版保留人工审核与人工发布环节。系统生成可复制 HTML，用户再粘贴到微信公众号后台发布。
 
-## In Scope For MVP
+## 3. MVP 范围
 
-### Content Types
+### 3.1 内容类型
 
-The MVP supports:
+第一版支持：
 
-- New product launch articles.
-- Holiday or campaign promotion articles.
+- 新品上市。
+- 节日促销。
 
-The design should allow later templates for health education, installation cases, award announcements, and customer stories.
+后续可以扩展：
 
-### Asset Processing
+- 健康科普。
+- 装机案例。
+- 获奖推送。
+- 客户故事。
 
-The system scans a configured local asset directory. The current reference asset directory is the `asset` folder under the user-provided WeChat content AI project folder on the desktop.
+### 3.2 素材处理
 
-The MVP should parse:
+系统扫描用户配置的本地素材目录。当前参考目录是桌面项目文件夹下的 `asset` 文件夹。
 
-- Markdown text.
-- Word documents (`.docx`).
-- PDF text where extractable.
-- Images by filename, path, size, and inferred category.
+MVP 需要解析：
 
-PDFs that cannot yield text should remain indexed as file assets and be flagged as needing manual review.
+- Markdown 文本。
+- Word 文档（`.docx`）。
+- 可抽取文字的 PDF。
+- 图片文件名、路径、尺寸、大小和推断分类。
 
-### Article Generation
+如果 PDF 无法抽取文字，系统仍然把它作为素材附件记录，并在审核要点里提示人工确认。
 
-The system generates:
+### 3.3 内容生成
 
-- Article title.
-- Markdown body.
-- WeChat-compatible HTML.
-- SEO keywords.
-- CTA.
-- Image placeholders.
-- Image recommendation list with local paths.
-- Manual audit notes.
-- Article quality score.
+系统输出：
 
-Generation supports two modes:
+- 文章标题。
+- Markdown 正文。
+- 微信公众号兼容 HTML。
+- SEO 关键词。
+- CTA 行动召唤。
+- 图片占位。
+- 推荐配图清单和本地路径。
+- 人工审核要点。
+- 文章质量评分。
 
-- Real model mode when a valid API key is configured.
-- Simulation mode when no API key is configured, so the full workflow can run offline for demos and testing.
+生成模式分为两种：
 
-### Web Workstation
+- 真实模型模式：只有配置 API Key 时才调用真实大模型。
+- 模拟生成模式：没有 API Key 时自动启用，用模板和素材摘要跑通完整流程。
 
-The local web workstation includes:
+页面上必须清楚标记当前文章是“模拟生成”还是“真实模型生成”。
 
-- Article task list and generation history.
-- New article form.
-- Template switching.
-- Article preview page.
-- One-click HTML copy.
-- AI rewrite.
-- Title optimization.
-- Image replacement.
-- Asset index status.
-- Template list.
+### 3.4 Web 工作台功能
 
-The first version does not need a complex rich-text editor. Users can review the preview, generate improved versions, copy HTML, and do final edits in the WeChat backend if needed.
+本地 Web 工作台需要包含：
 
-### Templates
+- 多模板切换。
+- 文章预览页面。
+- 一键复制 HTML。
+- AI 改写。
+- 标题优化。
+- 图片替换。
+- 生成历史。
+- 素材库索引状态。
+- 文章质量评分。
 
-The MVP includes multiple templates:
+第一版不做复杂富文本编辑器。用户可以在系统中生成和优化，再复制 HTML 到微信公众号后台做最终发布。
 
-- New product launch template.
-- Holiday promotion template.
-- Professional technology visual style.
-- Campaign promotion visual style.
-- Simple brand visual style.
+### 3.5 模板
 
-Templates affect:
+MVP 内置：
 
-- Article outline.
-- Title style.
-- CTA style.
-- HTML layout.
-- Inline CSS styling.
+- 新品上市模板。
+- 节日促销模板。
+- 专业科技风。
+- 促销活动风。
+- 简洁品牌风。
 
-### Article Quality Scoring
+模板影响：
 
-Each generated article version should receive a quality score.
+- 文章结构。
+- 标题风格。
+- CTA 样式。
+- HTML 排版。
+- 内联 CSS。
 
-The quality score includes:
+### 3.6 文章质量评分
 
-- Overall score, 1-100.
-- Title score.
-- Structure score.
-- Material usage score.
-- Compliance score.
-- Readability score.
-- WeChat formatting score.
-- Issues.
-- Suggestions.
+每个文章版本都要生成质量评分：
 
-The MVP should support rule-based scoring. If a real model API is configured, it may also use AI scoring for richer suggestions.
+- 总分：1-100。
+- 标题吸引力。
+- 结构完整度。
+- 素材引用充分度。
+- 合规风险。
+- 可读性。
+- 公众号排版适配度。
+- 问题列表。
+- 优化建议。
 
-### Search And Retrieval
+MVP 使用规则评分。有 API Key 时可以追加 AI 评分建议。
 
-The MVP uses SQLite with keyword search or SQLite FTS where practical.
+### 3.7 检索与向量接口预留
 
-Semantic search interfaces should be reserved from the start:
+MVP 使用 SQLite 和关键词检索，也可以使用 SQLite FTS。
 
-- `POST /api/search/assets`
-- `POST /api/search/semantic`
-- `POST /api/assets/embed`
+从接口层预留语义检索能力：
 
-For MVP, semantic search can fall back to keyword search. Production can later use PostgreSQL with pgvector, Elasticsearch, Milvus, or Qdrant.
+- `POST /api/search/assets`：素材关键词检索。
+- `POST /api/search/semantic`：语义检索预留，MVP 可回退到关键词检索。
+- `POST /api/assets/embed`：素材向量生成预留，MVP 可为空实现或本地缓存。
 
-### Storage
+生产环境可以迁移到：
 
-MVP storage uses SQLite for simple local deployment.
+- PostgreSQL + pgvector。
+- Elasticsearch。
+- Milvus。
+- Qdrant。
 
-The data access layer should avoid hard-binding business logic to SQLite-only features. Production should be able to migrate to PostgreSQL, with future support for pgvector.
+### 3.8 数据库
 
-## Out Of Scope For MVP
+MVP 使用 SQLite：
 
-The first version does not include:
+- 部署简单。
+- 适合本地单机演示。
+- 方便快速开发和答辩展示。
 
-- Automatic WeChat Official Account publishing.
-- WeChat backend API integration.
-- Automatic operation analytics.
-- Automatic external hotspot collection.
-- OSS or COS image upload.
-- AI image generation.
-- Scheduled publishing.
-- A/B testing.
+生产环境可迁移 PostgreSQL：
 
-These are deferred because they depend on permissions, cloud credentials, platform APIs, or additional compliance review.
+- 数据访问层隔离数据库实现。
+- JSON 字段、时间字段、外键关系按可迁移方式设计。
+- 后续可接 pgvector 做语义检索。
 
-## Architecture
+## 4. MVP 不做的内容
 
-The system has five layers.
+第一版暂不做：
 
-### 1. Asset Index Layer
+- 自动发布微信公众号。
+- 微信公众号后台接口对接。
+- 自动运营数据分析。
+- 自动搜集热点。
+- OSS / COS 图床自动上传。
+- AI 生图。
+- 定时发布。
+- A/B 测试。
 
-Responsibilities:
+原因是这些能力依赖外部账号、平台权限、云密钥或更多合规验证。
 
-- Scan configured asset folders.
-- Parse Markdown, docx, and extractable PDF text.
-- Record image files and metadata.
-- Infer asset categories such as logo, product, poster, brochure, solution, or unknown.
-- Extract keywords and text excerpts.
-- Save index records locally.
+## 5. 本地 Web 工作台页面结构
 
-### 2. Content Generation Core
+### 5.1 首页
 
-Responsibilities:
+用途：展示系统状态和生成历史。
 
-- Accept normalized article input.
-- Select a content template.
-- Retrieve relevant material from the asset index.
-- Generate or simulate article content.
-- Produce Markdown, HTML, image slots, SEO keywords, CTA, and audit notes.
-- Support rewrite and title optimization operations.
+核心内容：
 
-This core must be callable from both CLI and web APIs.
+- 当前生成模式：模拟生成 / 真实模型生成。
+- 素材库索引状态。
+- 最近生成文章列表。
+- 新建文章入口。
+- 快速重新索引按钮。
 
-### 3. Layout Rendering Layer
+### 5.2 新建文章页
 
-Responsibilities:
+用途：填写基础信息并创建文章任务。
 
-- Convert Markdown into WeChat-compatible HTML.
-- Apply inline CSS.
-- Render headings, body text, quotes, dividers, CTA blocks, and image placeholders.
-- Support multiple visual templates.
-- Avoid base64 images to keep HTML size reasonable.
+表单字段：
 
-### 4. Local Workstation Layer
+- 内容类型：新品上市 / 节日促销。
+- 模板风格。
+- 产品名或活动名。
+- 核心卖点或促销信息。
+- 目标人群。
+- 语气。
+- 配图要求。
+- CTA。
 
-Responsibilities:
+提交后系统生成文章初稿并跳转到文章预览页。
 
-- Provide a local browser UI.
-- Create article jobs.
-- Display generation history.
-- Preview article versions.
-- Trigger rewrite, title optimization, and image replacement.
-- Copy HTML to clipboard.
-- Show quality score and audit notes.
+### 5.3 文章预览页
 
-### 5. Local Storage Layer
+用途：查看生成结果并做轻量优化。
 
-Responsibilities:
+页面模块：
 
-- Store asset index records.
-- Store template definitions.
-- Store article jobs.
-- Store article versions.
-- Store image replacement selections.
-- Store quality scores.
+- 当前生成模式标记。
+- 文章质量评分。
+- 标题区和标题候选。
+- 公众号样式预览。
+- Markdown 正文。
+- HTML 源码。
+- 配图清单。
+- 审核要点。
 
-MVP storage is SQLite. Production storage can migrate to PostgreSQL.
+操作按钮：
 
-## Recommended Technology Stack
+- 一键复制 HTML。
+- 标题优化。
+- AI 改写。
+- 图片替换。
 
-- Backend: Python FastAPI.
-- CLI: Python Typer or argparse.
-- Document parsing: `python-docx`, `pypdf`.
-- Markdown rendering: `markdown` plus `BeautifulSoup` for post-processing.
-- Image metadata: Pillow.
-- Storage: SQLite for MVP, PostgreSQL for production.
-- Frontend: simple local web UI. React/Vite is optional if interaction complexity grows.
+### 5.4 素材库页
 
-## Data Model
+用途：查看系统扫描到的素材。
 
-### Asset
+页面模块：
 
-Fields:
+- 素材数量统计。
+- 图片 / 文档 / PDF 分类。
+- 素材搜索。
+- 素材路径。
+- 文本摘要。
+- 重新索引入口。
+
+### 5.5 模板页
+
+用途：查看可用模板和风格。
+
+页面模块：
+
+- 模板列表。
+- 内容类型。
+- 文章结构说明。
+- 排版风格说明。
+- CTA 样式说明。
+
+MVP 先支持查看模板，后续再做模板编辑。
+
+## 6. 系统架构
+
+系统分为五层。
+
+### 6.1 素材索引层
+
+负责：
+
+- 扫描素材目录。
+- 解析 Markdown、docx、PDF。
+- 读取图片元数据。
+- 推断素材分类。
+- 提取关键词和文本摘要。
+- 保存素材索引。
+
+### 6.2 内容生成核心层
+
+负责：
+
+- 接收标准化文章输入。
+- 选择模板。
+- 检索相关素材。
+- 真实模型生成或模拟生成。
+- 输出 Markdown、HTML、SEO 关键词、CTA、图片占位和审核要点。
+- 支持 AI 改写和标题优化。
+
+命令行和 Web API 都调用这一层。
+
+### 6.3 排版渲染层
+
+负责：
+
+- Markdown 转微信公众号 HTML。
+- 应用内联 CSS。
+- 渲染标题、正文、引用、分割线、CTA 和图片占位。
+- 支持多种视觉模板。
+- 不使用 base64 图片，避免 HTML 体积过大。
+
+### 6.4 本地工作台层
+
+负责：
+
+- 提供中文页面。
+- 创建文章任务。
+- 展示生成历史。
+- 展示文章预览。
+- 触发改写、标题优化和图片替换。
+- 一键复制 HTML。
+- 展示质量评分和审核要点。
+
+### 6.5 本地存储层
+
+负责保存：
+
+- 素材索引。
+- 模板配置。
+- 文章任务。
+- 文章版本。
+- 图片替换记录。
+- 质量评分。
+
+## 7. 技术栈
+
+推荐技术栈：
+
+- 后端：Python。
+- Web Demo：Python 标准库 HTTP 服务或 FastAPI。
+- CLI：Python argparse 或 Typer。
+- 文档解析：标准库能力优先，后续可接 `python-docx`、`pypdf`。
+- Markdown 渲染：MVP 可用内部轻量渲染器，后续可接 `markdown` 和 `BeautifulSoup`。
+- 图片元数据：MVP 记录文件大小和扩展名，后续可接 Pillow。
+- 数据库：SQLite，生产迁移 PostgreSQL。
+
+## 8. 数据模型
+
+### 8.1 Asset 素材
 
 - `id`
 - `path`
-- `type`: `image`, `markdown`, `docx`, `pdf`
-- `category`: `logo`, `product`, `poster`, `brochure`, `solution`, `unknown`
+- `type`
+- `category`
 - `text_excerpt`
 - `keywords`
 - `metadata`
 - `created_at`
 - `updated_at`
 
-### Template
-
-Fields:
+### 8.2 Template 模板
 
 - `id`
 - `name`
@@ -249,9 +342,7 @@ Fields:
 - `created_at`
 - `updated_at`
 
-### ArticleJob
-
-Fields:
+### 8.3 ArticleJob 文章任务
 
 - `id`
 - `content_type`
@@ -267,9 +358,7 @@ Fields:
 - `created_at`
 - `updated_at`
 
-### ArticleVersion
-
-Fields:
+### 8.4 ArticleVersion 文章版本
 
 - `id`
 - `job_id`
@@ -279,13 +368,11 @@ Fields:
 - `seo_keywords`
 - `image_slots`
 - `audit_notes`
-- `version_type`: `initial`, `rewrite`, `title_optimized`, `image_replaced`
-- `generation_mode`: `api`, `simulation`
+- `version_type`
+- `generation_mode`
 - `created_at`
 
-### ImageSlot
-
-Fields:
+### 8.5 ImageSlot 图片占位
 
 - `id`
 - `article_version_id`
@@ -295,9 +382,7 @@ Fields:
 - `alt_text`
 - `placeholder_text`
 
-### QualityScore
-
-Fields:
+### 8.6 QualityScore 质量评分
 
 - `id`
 - `article_version_id`
@@ -310,161 +395,139 @@ Fields:
 - `wechat_format_score`
 - `issues`
 - `suggestions`
-- `scoring_mode`: `rules`, `api`
+- `scoring_mode`
 - `created_at`
 
-## API Design
+## 9. API 设计
 
-### Asset APIs
+### 9.1 素材接口
 
-- `POST /api/assets/reindex`: rescan the configured asset directory.
-- `GET /api/assets`: list indexed assets.
-- `POST /api/search/assets`: keyword search over assets.
-- `POST /api/search/semantic`: reserved semantic search endpoint; MVP may fall back to keyword search.
-- `POST /api/assets/embed`: reserved embedding endpoint; MVP may be a no-op or local cache operation.
+- `POST /api/assets/reindex`
+- `GET /api/assets`
+- `POST /api/search/assets`
+- `POST /api/search/semantic`
+- `POST /api/assets/embed`
 
-### Template APIs
+### 9.2 模板接口
 
-- `GET /api/templates`: list templates.
-- `GET /api/templates/{id}`: get one template.
+- `GET /api/templates`
+- `GET /api/templates/{id}`
 
-### Article APIs
+### 9.3 文章接口
 
-- `POST /api/articles`: create and generate an article.
-- `GET /api/articles`: list article history.
-- `GET /api/articles/{id}`: get one article job with versions.
-- `POST /api/articles/{id}/rewrite`: create a rewrite version.
-- `POST /api/articles/{id}/optimize-title`: generate title candidates or a title-optimized version.
-- `POST /api/articles/{id}/replace-image`: replace one image slot.
-- `GET /api/articles/{id}/html`: get copy-ready HTML.
-- `GET /api/articles/{id}/quality`: get article quality score.
+- `POST /api/articles`
+- `GET /api/articles`
+- `GET /api/articles/{id}`
+- `POST /api/articles/{id}/rewrite`
+- `POST /api/articles/{id}/optimize-title`
+- `POST /api/articles/{id}/replace-image`
+- `GET /api/articles/{id}/html`
+- `GET /api/articles/{id}/quality`
 
-## CLI Design
+## 10. CLI 设计
 
-Example commands:
+示例命令：
 
 ```bash
 python -m wechat_ai reindex --asset-dir "<desktop wechat content ai project>/asset"
 python -m wechat_ai generate --input examples/new_product.json
 python -m wechat_ai preview --article-id 1
 python -m wechat_ai score --article-id 1
+python -m wechat_ai serve
 ```
 
-The CLI should call the same application services as the web API.
+CLI 和 Web API 复用同一套核心服务。
 
-## Core Workflow
+## 11. 核心流程
 
-1. User configures the local asset directory.
-2. System scans and indexes assets.
-3. User creates an article task in the web UI or via JSON input.
-4. System selects or accepts a template.
-5. System retrieves relevant product, campaign, or brand material.
-6. System generates the article in API or simulation mode.
-7. System renders WeChat-compatible HTML.
-8. System recommends image slots and local image paths.
-9. System scores article quality.
-10. User previews the article.
-11. User can optimize the title, rewrite the body, or replace image selections.
-12. User copies HTML and publishes manually in the WeChat backend.
-13. System saves all generated versions in history.
+1. 用户配置本地素材目录。
+2. 系统扫描并索引素材。
+3. 用户通过网页表单或 JSON 创建文章任务。
+4. 系统选择模板。
+5. 系统检索相关产品、活动或品牌素材。
+6. 系统判断生成模式：无 API Key 使用模拟生成，有 API Key 才调用真实模型。
+7. 系统生成文章正文、标题、HTML、配图清单和审核要点。
+8. 系统生成文章质量评分。
+9. 用户在预览页查看文章。
+10. 用户可进行标题优化、AI 改写、图片替换。
+11. 用户一键复制 HTML。
+12. 用户到微信公众号后台人工预览并发布。
+13. 系统保存生成历史和版本。
 
-## Error Handling
+## 12. 异常处理
 
-- Missing matching assets: generate placeholders and add audit notes.
-- Unreadable PDF text: index the file as an attachment and flag manual review.
-- Missing API key: use simulation mode and mark the version accordingly.
-- API failure: fall back to simulation mode and store the error internally.
-- Article too short: add sections such as usage scenario, product advantage, or audit reminder.
-- Absolute advertising terms in title: replace them or mark them for review.
-- Oversized images: keep original file untouched and add a compression suggestion.
-- HTML too large: avoid base64 images and keep styles inline but compact.
+- 找不到匹配素材：生成图片或资料占位，并加入审核要点。
+- PDF 无法抽取文字：记录文件路径，并提示人工审核。
+- 没有 API Key：启用模拟生成，并在页面明显标记“模拟生成”。
+- API 调用失败：回退模拟生成，并记录错误信息。
+- 文章过短：自动补充场景痛点、产品优势或审核提示。
+- 标题包含广告法高风险词：自动替换或提示审核。
+- 图片过大：不改原图，只在配图清单里提示压缩。
+- HTML 体积过大：不嵌入 base64 图片，仅保留占位和路径。
 
-## Compliance And Security
+## 13. 安全与合规
 
-- Do not write API keys into source code.
-- Do not store API keys in article history.
-- Use `.env` or local configuration for model keys.
-- Do not upload customer or asset data externally unless the user explicitly configures a real model API.
-- Do not invent customer cases. If no verified case is found in the asset library, add an audit note instead.
-- Avoid absolute advertising terms such as "best", "first", and "top-level" in Chinese equivalents.
-- Keep manual review before publication.
+- API Key 不写入源码。
+- API Key 不进入文章历史。
+- 未显式配置真实模型时，不把素材上传到外部服务。
+- 不编造客户案例。
+- 找不到真实案例时写入审核提示。
+- 标题避免“最好、第一、顶级”等绝对化表达。
+- 发布前保留人工审核。
 
-## Testing Plan
+## 14. 测试计划
 
-### Unit Tests
+单元测试覆盖：
 
-Cover:
+- 数据库建表。
+- 模板初始化。
+- 素材扫描分类。
+- 模拟生成完整输出。
+- Markdown 转 HTML。
+- 标题合规检查。
+- 质量评分。
+- 无 API Key 时生成模式标记。
 
-- Asset scanner classification.
-- Markdown/docx/PDF text extraction.
-- Template selection.
-- Markdown-to-HTML rendering.
-- Image slot generation.
-- Title compliance checks.
-- Rule-based quality scoring.
-- Simulation generation.
+集成测试覆盖：
 
-### Integration Tests
+- 重新索引素材。
+- 生成新品上市文章。
+- 生成节日促销文章。
+- 保存和读取生成历史。
+- 标题优化。
+- AI 改写。
+- 图片替换。
+- 获取可复制 HTML。
 
-Cover:
+## 15. 验收标准
 
-- Reindex asset directory.
-- Generate a new product article.
-- Generate a holiday promotion article.
-- Save and reload article history.
-- Rewrite an article version.
-- Optimize titles.
-- Replace image slots.
-- Retrieve copy-ready HTML.
+MVP 达到以下标准即可验收：
 
-### Manual Acceptance Tests
+- 文档和页面文案均为中文，便于导师和答辩展示。
+- 首页、新建文章页、文章预览页、素材库页、模板页均可访问。
+- 无 API Key 时完整流程可运行，并显示“模拟生成”。
+- 有 API Key 时才进入真实模型调用路径。
+- CLI 可以索引素材并从 JSON 生成文章。
+- Web 工作台可以创建文章并进入预览页。
+- 新品上市和节日促销模板都能生成。
+- 生成结果包含标题、Markdown、HTML、配图清单、审核要点和质量评分。
+- 一键复制 HTML 按钮存在且可复制预览 HTML。
+- 标题优化、AI 改写、图片替换能生成或更新文章版本。
+- SQLite 中保存素材、模板、文章、版本和评分数据。
+- 数据访问层保留 PostgreSQL 迁移空间。
 
-Use at least two fixed examples:
+## 16. 后续路线
 
-1. New product launch: 名士 K2 智能直饮机.
-2. Holiday campaign: 618, 双 12, or 端午 promotion.
+后续版本可以增加：
 
-Generated results must include:
-
-- Title.
-- Markdown body.
-- HTML.
-- Image placeholders.
-- Image recommendation list.
-- SEO keywords.
-- CTA.
-- Audit notes.
-- Quality score.
-
-## Acceptance Criteria
-
-The MVP is acceptable when:
-
-- The asset library can be scanned and indexed.
-- The web workstation can create and preview article jobs.
-- The CLI can reindex assets and generate an article from JSON.
-- New product and holiday promotion templates both work.
-- Generated HTML uses inline styles and is copy-ready for WeChat backend review.
-- One-click HTML copy works in the web UI.
-- Title optimization creates multiple usable title candidates.
-- AI rewrite creates a new article version.
-- Image replacement updates the selected image slot and image list.
-- Quality scoring returns scores, issues, and suggestions.
-- No API key is required for the full workflow to run in simulation mode.
-- The data model can be migrated from SQLite to PostgreSQL without redesigning business logic.
-
-## Deferred Roadmap
-
-Later versions can add:
-
-- OSS or COS image upload.
-- Public image URL generation.
-- WeChat publishing API integration.
-- Operation analytics.
-- External hotspot collection.
-- AI image generation.
-- Automated weekly topic planning.
-- Scheduled publishing.
-- A/B title testing.
-- PostgreSQL with pgvector.
-- Full semantic retrieval over historical articles and assets.
+- OSS / COS 图床上传。
+- 公网图片 URL。
+- 微信公众号发布接口。
+- 运营数据分析。
+- 外部热点搜集。
+- AI 生图。
+- 每周自动选题。
+- 定时发布。
+- 标题 A/B 测试。
+- PostgreSQL + pgvector。
+- 历史文章和素材的完整语义检索。

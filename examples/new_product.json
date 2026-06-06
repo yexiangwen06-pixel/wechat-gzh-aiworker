@@ -1,0 +1,15 @@
+{
+  "content_type": "new_product",
+  "product_name": "名士K2智能直饮机",
+  "key_points": [
+    "2000G大流量",
+    "DPM动态蛋白纳滤技术",
+    "IoT智能管理",
+    "一级水效节能40%"
+  ],
+  "target_audience": "企业采购决策者",
+  "tone": "专业、科技感",
+  "image_requirement": "产品图3张 + 功能示意图2张",
+  "cta": "预约企业饮水方案咨询",
+  "template_id": 1
+}
