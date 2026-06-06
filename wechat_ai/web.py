@@ -34,7 +34,10 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
       --bg:#f4f7fb; --blue:#1264d8; --teal:#0f9f8f; --amber:#b36b00; --rose:#c2415b;
     }}
     *{{box-sizing:border-box}}
-    body{{margin:0;font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;background:var(--bg);color:var(--ink);}}
+    body{{margin:0;font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;background:
+      radial-gradient(circle at 12% 8%,rgba(18,100,216,.10),transparent 28%),
+      radial-gradient(circle at 88% 18%,rgba(15,159,143,.12),transparent 24%),
+      var(--bg);color:var(--ink);}}
     header{{position:sticky;top:0;z-index:2;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}}
     .topbar{{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px;}}
     .brand{{display:flex;align-items:center;gap:10px;font-weight:800;}}
@@ -47,6 +50,8 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     h3{{font-size:16px;margin:0 0 8px;letter-spacing:0;}}
     p{{color:var(--muted);line-height:1.7;margin:0 0 10px;}}
     .hero{{display:grid;grid-template-columns:1.5fr .9fr;gap:18px;margin-bottom:18px;align-items:stretch;}}
+    .assistant-hero h1{{font-size:38px;max-width:760px;}}
+    .assistant-actions{{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}}
     .surface,.metric,.article-card,.asset-card,.template-card,.wizard-step,.ai-panel{{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 14px 34px rgba(23,40,72,.07);}}
     .surface{{padding:22px;}}
     .ai-panel{{padding:18px;background:linear-gradient(135deg,#ffffff,#eef8f6);}}
@@ -95,7 +100,9 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .workflow{{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:0 0 18px;}}
     .workflow span{{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px;text-align:center;font-size:12px;font-weight:800;color:#42526a;}}
     .workflow .active{{background:#e9f7f5;color:#08735f;border-color:#8fd8cc;}}
-    .drawer{{position:relative;background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 14px 34px rgba(23,40,72,.07);}}
+    .drawer{{display:none;position:fixed;right:22px;top:86px;width:min(640px,calc(100vw - 44px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:8px;padding:18px;box-shadow:0 24px 80px rgba(15,23,42,.22);z-index:5;}}
+    .drawer:target{{display:block;animation:slideIn .2s ease both;}}
+    .drawer-close{{float:right;}}
     .candidate{{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #edf2f7;padding:10px 0;}}
     .candidate:last-child{{border-bottom:0;}}
     .style-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}}
@@ -104,13 +111,20 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
     .image-slot-grid{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}}
     .image-slot-card{{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff;}}
     .selector-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px;}}
-    .selector-item{{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfdff;}}
+    .selector-item{{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfdff;text-decoration:none;color:inherit;display:block;}}
+    .generator-strip{{position:relative;overflow:hidden;border:1px solid #bde7dd;background:rgba(239,250,248,.92);border-radius:8px;padding:12px 14px;margin:12px 0;color:#0f766e;font-weight:800;}}
+    .generator-strip:after{{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);transform:translateX(-100%);animation:scan 1.8s linear infinite;}}
+    @keyframes scan{{to{{transform:translateX(100%)}}}}
+    .template-drawer{{display:none;position:fixed;right:22px;top:86px;width:min(560px,calc(100vw - 44px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 80px rgba(15,23,42,.22);z-index:5;padding:18px;}}
+    .template-drawer:target{{display:block;animation:slideIn .2s ease both;}}
+    .full-wechat-preview{{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;}}
+    .full-wechat-preview .banner{{height:120px;border-radius:8px;background:linear-gradient(135deg,#dcecff,#e9fbf7);display:grid;place-items:center;color:#1264d8;font-weight:900;margin-bottom:12px;}}
     .asset-card,.option-card,.template-card,.article-card,.image-slot-card{{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}}
     .asset-card:hover,.option-card:hover,.template-card:hover,.article-card:hover,.image-slot-card:hover{{transform:translateY(-3px);box-shadow:0 18px 42px rgba(23,40,72,.12);border-color:#b8c7dc;}}
     .btn:hover,button:hover{{transform:translateY(-1px);filter:brightness(1.03);}}
     main{{animation:fadeIn .22s ease both;}}
     @keyframes fadeIn{{from{{opacity:0;transform:translateY(6px)}}to{{opacity:1;transform:none}}}}
-    .asset-drawer{{display:none;position:fixed;right:22px;top:86px;width:min(440px,calc(100vw - 44px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 80px rgba(15,23,42,.22);z-index:4;padding:18px;}}
+    .asset-drawer{{display:none;position:fixed;right:22px;top:86px;width:min(520px,calc(100vw - 44px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 80px rgba(15,23,42,.22);z-index:4;padding:18px;}}
     .asset-drawer:target{{display:block;animation:slideIn .2s ease both;}}
     @keyframes slideIn{{from{{opacity:0;transform:translateX(24px)}}to{{opacity:1;transform:none}}}}
     .pdf-card{{height:124px;border-radius:7px;background:linear-gradient(135deg,#fff7ed,#fee2e2);display:grid;place-items:center;margin-bottom:12px;color:#9f1239;font-weight:900;text-align:center;}}
@@ -122,7 +136,7 @@ def layout(title: str, body: str, api_key: str | None = None) -> str:
   <div class="topbar">
     <div class="brand"><div class="mark">AI</div><span>公众号内容 AI 员工</span></div>
     <nav>
-      <a href="/">Dashboard</a>
+      <a href="/">AI助手</a>
       <a href="/articles/new">新建文章</a>
       <a href="/assets">素材库</a>
       <a href="/templates">模板</a>
@@ -153,13 +167,15 @@ def render_home_page(conn, api_key: str | None = None) -> str:
         for item in articles[:6]
     ) or '<article class="article-card"><h3>还没有文章</h3><p>从快速创建开始，让 AI 员工生成第一篇公众号内容。</p></article>'
     body = f"""
-<section class="hero">
+<section class="hero assistant-hero">
   <div class="surface">
-    <p class="muted">AI 工作台 Dashboard</p>
-    <h1>让公众号内容从素材库自动长出来</h1>
-    <p>AI 员工会读取企业素材、匹配模板、生成文章、给出质量评分，并把结果整理成可复制到微信公众号后台的 HTML。</p>
-    <a class="btn" href="/articles/new">快速创建</a>
-    <a class="btn secondary" href="/assets">查看素材分析</a>
+    <p class="muted">AI 助手入口</p>
+    <h1>把素材、标题、配图和排版交给公众号内容 AI 助手</h1>
+    <p>企业运营人员只需要输入基础信息，AI 助手会读取企业素材、匹配模板、生成文章、优化标题、调整配图，并整理成可复制到微信公众号后台的 HTML。</p>
+    <div class="assistant-actions">
+      <a class="btn" href="/articles/new">开始创作</a>
+      <a class="btn secondary" href="/assets">查看素材分析</a>
+    </div>
   </div>
   <aside class="ai-panel">
     <div class="ai-state"><strong>AI状态面板</strong><span class="pulse"></span></div>
@@ -178,7 +194,7 @@ def render_home_page(conn, api_key: str | None = None) -> str:
   <h2>最近生成文章</h2>
   <div class="cards">{recent_cards}</div>
 </section>"""
-    return layout("AI 工作台 Dashboard", body, api_key)
+    return layout("AI 助手入口", body, api_key)
 
 
 def render_new_article_page(conn, api_key: str | None = None) -> str:
@@ -225,6 +241,7 @@ IoT智能管理</textarea>
     <p class="muted">Step4 生成文章</p>
     <h2>生成后进入优化工作流</h2>
     <p>AI 将自动匹配素材库图片，生成接近公众号最终效果的预览，并进入标题优化、AI改写、图片调整和最终确认流程。</p>
+    <div class="generator-strip">AI助手正在准备：读取素材、匹配模板、规划标题和配图位置</div>
     <div class="recommend">生成中 AI 正在分析素材：产品图、参数图、品牌图会自动进入文章预览。</div>
     <button type="submit">生成文章</button>
   </section>
@@ -267,7 +284,7 @@ def render_preview_page(conn, job_id: int) -> str:
 {render_rewrite_drawer(job_id, original, rewritten)}
 {render_image_drawer(job_id, latest["image_slots"], image_assets)}
 <section class="preview-grid">
-  <div class="surface"><h2>公众号样式预览</h2><div class="preview">{latest['html']}</div></div>
+  <div class="surface"><p class="muted">公众号正文预览优先</p><h2>公众号样式预览</h2><div class="preview">{latest['html']}</div></div>
   <div>
     <section class="surface"><h2>当前文章已使用的图片清单</h2>{render_used_image_list(latest["image_slots"])}</section>
     <section class="surface"><h2>最终确认</h2><p>确认标题、正文、图片和 CTA 后，点击复制HTML。复制前建议在公众号后台再预览一次。</p><button onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('html-source').innerText)">复制HTML</button></section>
@@ -294,7 +311,7 @@ def render_title_drawer(job_id: int, candidates: list[str]) -> str:
         """
         for idx, title in enumerate(candidates, start=1)
     )
-    return f'<section id="title-drawer" class="drawer"><h2>标题优化</h2><p>点击“采用”即可切换标题。</p>{rows}</section>'
+    return f'<section id="title-drawer" class="drawer"><a href="#" class="btn secondary drawer-close">关闭</a><p class="muted">标题优化弹窗</p><h2>标题优化</h2><p>点击“采用”即可切换标题。</p>{rows}</section>'
 
 
 def render_rewrite_drawer(job_id: int, original: dict, rewritten: dict | None) -> str:
@@ -303,6 +320,8 @@ def render_rewrite_drawer(job_id: int, original: dict, rewritten: dict | None) -
     rewritten_markdown = rewritten["markdown"] if rewritten else "尚未生成改写版本，请先选择一种改写风格。"
     return f"""
 <section id="rewrite-drawer" class="drawer">
+  <a href="#" class="btn secondary drawer-close">关闭</a>
+  <p class="muted">AI改写弹窗</p>
   <h2>AI改写</h2>
   <p>请选择改写风格：</p>
   <div class="style-grid">{links}</div>
@@ -323,6 +342,7 @@ def render_image_drawer(job_id: int, slots: list[dict], image_assets: list[dict]
         selector = "".join(render_selector_item(asset) for asset in image_assets[:8])
     return f"""
 <section id="image-drawer" class="drawer">
+  <a href="#" class="btn secondary drawer-close">关闭</a>
   <h2>图片调整</h2>
   <p>生成文章后自动显示封面图、产品图、参数图、品牌图。案例图可在素材库选择器中继续补充。每个图片位都可以从素材库选择器中替换。</p>
   <div class="image-slot-grid">{slot_cards}</div>
@@ -339,13 +359,17 @@ def render_image_slot_card(job_id: int, idx: int, slot: dict, image_assets: list
         if asset_id
         else "<span>推荐素材列表</span>"
     )
-    first_replacement = quote(image_assets[0]["path"]) if image_assets else ""
+    replacements = "".join(render_selector_item(asset, job_id, idx) for asset in image_assets[:6])
     return f"""
 <article class="image-slot-card">
   <h3>{escape(slot.get('position', f'图片位{idx + 1}'))}</h3>
   <div class="thumb">{thumb}</div>
   <p class="muted">当前推荐图片缩略图</p>
-  <a class="btn secondary" href="/articles/{job_id}/replace-image?slot={idx}&path={first_replacement}">更换图片</a>
+  <a class="btn secondary" href="#image-selector-{idx}">更换图片 · 打开图片选择器</a>
+  <div id="image-selector-{idx}" style="margin-top:10px;">
+    <h4>素材库选择器</h4>
+    <div class="selector-grid">{replacements or '<p>推荐候选图片为空，请先补充素材。</p>'}</div>
+  </div>
 </article>"""
 
 
@@ -357,12 +381,17 @@ def render_used_image_list(slots: list[dict]) -> str:
     return f"<ul>{items}</ul>"
 
 
-def render_selector_item(asset: dict) -> str:
+def render_selector_item(asset: dict, job_id: int | None = None, slot_idx: int = 0) -> str:
+    href = (
+        f"/articles/{job_id}/replace-image?slot={slot_idx}&path={quote(asset['path'])}"
+        if job_id is not None
+        else "#"
+    )
     return f"""
-<article class="selector-item">
+<a class="selector-item" href="{href}">
   <div class="thumb"><img alt="素材缩略图" src="/asset-thumb/{asset['id']}"></div>
   <p>{escape(Path(asset['path']).name)}</p>
-</article>"""
+</a>"""
 
 
 def asset_id_for_path(image_assets: list[dict], path: str) -> int | None:
@@ -380,7 +409,7 @@ def render_asset_page(conn) -> str:
 <section class="surface">
   <p class="muted">素材分析进度 · 素材卡片</p>
   <h1>素材库</h1>
-  <p>卡片只展示可用于创作的信息，不暴露本地文件路径。点击素材可查看详情，并加入文章、作为封面或作为正文配图。</p>
+  <p>卡片只展示可用于创作的信息，不暴露本地文件路径。点击图片放大预览，并可加入文章、作为封面或作为正文配图。</p>
 </section>
 <section class="surface">
   <h2>搜索与筛选</h2>
@@ -404,6 +433,7 @@ def render_asset_card(asset: dict) -> str:
 <a class="asset-card" href="#asset-{asset['id']}" style="display:block;text-decoration:none;color:inherit;">
   <div class="thumb">{thumb}</div>
   <h3>{escape(name)}</h3>
+  <p class="muted">点击图片放大预览</p>
   <p><strong>分类</strong>：{escape(asset['category'])}</p>
   <p><strong>关键词</strong>：{chips}</p>
   <p><strong>推荐用途</strong>：{escape(recommended_use(asset))}</p>
@@ -457,17 +487,22 @@ def recommended_use(asset: dict) -> str:
 def render_template_page(conn) -> str:
     rows = conn.execute("select * from templates order by id").fetchall()
     cards = "".join(render_template_card(row) for row in rows)
-    return layout("模板", f"<section class='surface'><p class='muted'>模板工作台</p><h1>模板</h1><p>每个模板都带有公众号样式预览，方便运营人员快速切换不同内容风格。</p></section><section class='cards'>{cards}</section>")
+    drawers = "".join(render_template_drawer(row) for row in rows)
+    return layout(
+        "模板",
+        f"<section class='surface'><p class='muted'>模板工作台</p><h1>模板</h1><p>每个模板都可以点击查看完整公众号预览，方便运营人员快速切换不同内容风格。</p></section><section class='cards'>{cards}</section>{drawers}",
+    )
 
 
 def render_template_card(row) -> str:
     outline = loads(row["outline"], [])
     outline_chips = "".join(f"<span class='chip'>{escape(item)}</span>" for item in outline[:4])
     return f"""
-<article class="template-card">
+<a class="template-card" href="#template-{row['id']}" style="display:block;text-decoration:none;color:inherit;">
   <h2>{escape(row['name'])}</h2>
   <p>风格：{escape(row['style_name'])}</p>
   <p>{outline_chips}</p>
+  <p class="muted">点击查看完整公众号预览</p>
   <div class="template-preview">
     <h3>公众号样式预览</h3>
     <div class="wechat-mini">
@@ -478,7 +513,30 @@ def render_template_card(row) -> str:
       <div class="cta">{escape(row['cta_style'])}</div>
     </div>
   </div>
-</article>"""
+</a>"""
+
+
+def render_template_drawer(row) -> str:
+    outline = loads(row["outline"], [])
+    subtitle = escape(outline[1] if len(outline) > 1 else "核心卖点")
+    cta = escape(row["cta_style"])
+    return f"""
+<aside id="template-{row['id']}" class="template-drawer">
+  <a href="#" class="btn secondary drawer-close">关闭</a>
+  <p class="muted">完整公众号预览</p>
+  <h2>{escape(row['name'])}</h2>
+  <div class="full-wechat-preview">
+    <div class="banner">Banner图 · {escape(row['style_name'])}</div>
+    <h1 style="font-size:24px;">企业饮水内容标题示例</h1>
+    <p>正文段落：围绕企业真实运营场景，AI 会根据素材库提炼痛点、卖点和转化信息。</p>
+    <h3>{subtitle}</h3>
+    <blockquote style="margin:12px 0;padding:12px;border-left:4px solid #1264d8;background:#f4f8ff;">引用块：适合放置客户痛点、核心结论或品牌主张。</blockquote>
+    <div class="thumb" style="height:150px;">图片区</div>
+    <p>图文混排：产品图、参数图和品牌图会跟随模板风格实时呈现。</p>
+    <div class="cta">{cta}</div>
+  </div>
+  <a class="btn" href="/articles/new">应用到当前文章</a>
+</aside>"""
 
 
 class WorkbenchHandler(BaseHTTPRequestHandler):

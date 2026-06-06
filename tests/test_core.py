@@ -165,22 +165,25 @@ class WechatAiCoreTests(unittest.TestCase):
         }
         joined = "\n".join(pages.values())
         for text in [
-            "AI 工作台 Dashboard",
+            "AI 助手入口",
             "AI状态面板",
             "素材数量",
             "模板数量",
             "文章生成数量",
-            "快速创建",
+            "开始创作",
             "最近生成文章",
             "向导式流程",
             "1 选择内容类型",
             "2 填写内容",
             "3 选择风格模板",
             "4 生成",
+            "AI助手正在准备",
             "素材卡片",
-            "图片缩略图",
+            "点击图片放大预览",
             "推荐用途",
             "公众号样式预览",
+            "点击查看完整公众号预览",
+            "应用到当前文章",
             "智能匹配结果",
             "推荐内容提示",
             "模拟生成",
@@ -189,6 +192,8 @@ class WechatAiCoreTests(unittest.TestCase):
             self.assertIn(text, joined)
         self.assertNotIn("C:\\", pages["assets"])
         self.assertNotIn("/tmp/", pages["assets"])
+        for bad in ["Dashboard", "Demo", "答辩", "演示系统"]:
+            self.assertNotIn(bad, joined)
 
     def test_preview_supports_complete_content_optimization_workflow(self):
         from wechat_ai.service import create_article
@@ -223,8 +228,10 @@ class WechatAiCoreTests(unittest.TestCase):
             "标题候选1",
             "标题候选5",
             "采用",
+            "标题优化弹窗",
             "已应用新标题",
             "请选择改写风格",
+            "AI改写弹窗",
             "更专业",
             "更营销",
             "更亲和",
@@ -239,11 +246,13 @@ class WechatAiCoreTests(unittest.TestCase):
             "参数图",
             "品牌图",
             "更换图片",
+            "打开图片选择器",
             "素材库选择器",
             "当前文章已使用的图片清单",
             "最终确认",
             "复制HTML",
             "HTML源码",
+            "公众号正文预览优先",
         ]:
             self.assertIn(text, new_page + preview)
 
@@ -274,6 +283,7 @@ class WechatAiCoreTests(unittest.TestCase):
             "PDF资料卡",
             "页数",
             "推荐用途",
+            "点击图片放大预览",
         ]:
             self.assertIn(text, page)
         for bad in ["答辩", "Demo", "演示系统", "图片缩略图 PDF", "000000", ">00<", ">004<"]:
