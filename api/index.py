@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from wechat_ai.assets import index_assets
 from wechat_ai.config import get_api_key, load_local_env
 from wechat_ai.db import connect, init_db
 from wechat_ai.web import WorkbenchHandler
@@ -35,6 +36,7 @@ def get_vercel_connection():
                 _load_environment()
                 conn = connect(_db_path())
                 init_db(conn)
+                index_assets(conn, ROOT / "demo_assets")
                 _CONN = conn
     return _CONN
 

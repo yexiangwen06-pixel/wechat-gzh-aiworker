@@ -171,9 +171,11 @@ class WechatAiCoreTests(unittest.TestCase):
                 "select name from sqlite_master where type='table'"
             ).fetchall()
         }
+        asset_count = server.conn.execute("select count(*) from assets").fetchone()[0]
         self.assertIn("article_jobs", tables)
         self.assertEqual(server.api_key, "deepseek-test-key")
         self.assertTrue(Path(db_path).exists())
+        self.assertGreaterEqual(asset_count, 5)
 
     def test_api_generation_uses_model_output_and_keeps_wechat_preview_images(self):
         from wechat_ai.service import create_article

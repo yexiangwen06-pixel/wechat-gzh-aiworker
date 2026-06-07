@@ -45,7 +45,11 @@ WECHAT_DRAFT_MODE=real
 
 ## Vercel 部署
 
-本项目已包含 `vercel.json` 和 `api/index.py`，可部署为 Vercel Python Serverless Function。详见：
+项目已包含 `vercel.json` 和 `api/index.py`，可部署为 Vercel Python Serverless Function。
+
+Vercel 版本会自动加载 `demo_assets/` 中的演示素材，打开公网链接后就能展示素材库、图片匹配和公众号预览效果。素材库页面也支持临时上传图片，但云端上传文件写入 `/tmp`，不保证长期保存。
+
+详见：
 
 ```text
 docs/vercel-deployment.md
@@ -53,6 +57,6 @@ docs/vercel-deployment.md
 
 ## 交付评价维度
 
-- 流程化：固定从资料输入到公众号预览、编辑、保存草稿箱的工作流。
+- 流程化：固定从资料输入到公众号预览、编辑、复制 HTML 或保存草稿箱的工作流。
 - 标准化：DeepSeek 输出 blocks JSON，前端按统一结构渲染，后端按统一规则转 HTML。
-- 可复现：本地脚本、环境变量模板、Vercel 配置和部署文档齐全，别人电脑上可以按步骤运行。
+- 可复现：本地脚本、环境变量模板、Vercel 配置、演示素材和部署文档齐全，别人电脑上可以按步骤运行。

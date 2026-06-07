@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <rect width="1200" height="720" fill="#f8fafc"/>
+  <text x="72" y="102" font-family="Microsoft YaHei, Arial" font-size="54" font-weight="900" fill="#0f172a">K2 核心参数与功能</text>
+  <text x="76" y="154" font-family="Microsoft YaHei, Arial" font-size="26" fill="#64748b">适合企业采购决策展示的参数资料图</text>
+  <g font-family="Microsoft YaHei, Arial">
+    <rect x="80" y="230" width="300" height="150" rx="24" fill="#ecfeff" stroke="#67e8f9"/>
+    <text x="118" y="294" font-size="42" font-weight="800" fill="#0e7490">2000G</text>
+    <text x="118" y="338" font-size="26" fill="#334155">大流量供水</text>
+    <rect x="450" y="230" width="300" height="150" rx="24" fill="#f0fdf4" stroke="#86efac"/>
+    <text x="488" y="294" font-size="42" font-weight="800" fill="#15803d">DPM</text>
+    <text x="488" y="338" font-size="26" fill="#334155">动态蛋白纳滤</text>
+    <rect x="820" y="230" width="300" height="150" rx="24" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="858" y="294" font-size="42" font-weight="800" fill="#1d4ed8">IoT</text>
+    <text x="858" y="338" font-size="26" fill="#334155">智能设备管理</text>
+    <rect x="80" y="448" width="1040" height="118" rx="26" fill="#0f766e"/>
+    <text x="122" y="520" font-size="32" font-weight="800" fill="#ffffff">减少换水、搬运和等待，让企业饮水从后勤负担变成可管理服务。</text>
+  </g>
+</svg>

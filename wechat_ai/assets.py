@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 from .db import dumps, loads
 
 
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"}
 TEXT_SUFFIXES = {".md", ".txt"}
 
 

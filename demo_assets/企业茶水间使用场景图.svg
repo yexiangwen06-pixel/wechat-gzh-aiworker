@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <rect width="1200" height="720" fill="#eef2ff"/>
+  <rect x="80" y="120" width="1040" height="480" rx="42" fill="#ffffff"/>
+  <rect x="130" y="190" width="360" height="270" rx="22" fill="#dbeafe"/>
+  <rect x="560" y="182" width="230" height="330" rx="32" fill="#f8fafc" stroke="#cbd5e1" stroke-width="4"/>
+  <rect x="605" y="238" width="140" height="72" rx="20" fill="#e2e8f0"/>
+  <rect x="652" y="512" width="48" height="86" rx="20" fill="#cbd5e1"/>
+  <circle cx="910" cy="318" r="74" fill="#ccfbf1"/>
+  <circle cx="975" cy="332" r="52" fill="#d9f99d"/>
+  <text x="132" y="104" font-family="Microsoft YaHei, Arial" font-size="48" font-weight="900" fill="#1e293b">企业茶水间饮水场景</text>
+  <text x="132" y="538" font-family="Microsoft YaHei, Arial" font-size="30" fill="#475569">办公室、会议区、员工休息区，都需要稳定、健康、少维护的饮水体验。</text>
+</svg>

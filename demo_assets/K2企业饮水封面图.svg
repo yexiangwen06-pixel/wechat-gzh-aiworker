@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <rect width="1200" height="720" fill="#082f49"/>
+  <rect x="0" y="0" width="1200" height="720" fill="#0f766e" opacity=".32"/>
+  <circle cx="980" cy="110" r="160" fill="#38bdf8" opacity=".22"/>
+  <circle cx="150" cy="610" r="220" fill="#22c55e" opacity=".20"/>
+  <rect x="710" y="130" width="312" height="430" rx="42" fill="#f8fafc"/>
+  <rect x="760" y="192" width="210" height="92" rx="22" fill="#e2e8f0"/>
+  <rect x="822" y="560" width="88" height="70" rx="26" fill="#cbd5e1"/>
+  <path d="M866 628 C850 650 842 674 842 700" stroke="#7dd3fc" stroke-width="13" stroke-linecap="round" fill="none"/>
+  <text x="86" y="162" font-family="Microsoft YaHei, Arial" font-size="68" font-weight="900" fill="#ffffff">企业饮水升级</text>
+  <text x="88" y="244" font-family="Microsoft YaHei, Arial" font-size="42" font-weight="700" fill="#ccfbf1">从桶装水到智能直饮</text>
+  <text x="92" y="328" font-family="Microsoft YaHei, Arial" font-size="30" fill="#e0f2fe">K2 智能直饮机，用稳定供水、智能管理和健康过滤提升办公体验。</text>
+  <rect x="92" y="430" width="310" height="76" rx="18" fill="#ffffff"/>
+  <text x="126" y="480" font-family="Microsoft YaHei, Arial" font-size="30" font-weight="800" fill="#0f766e">预约饮水方案</text>
+</svg>
