@@ -67,6 +67,10 @@ def init_db(conn: sqlite3.Connection) -> None:
             seo_keywords text not null default '[]',
             image_slots text not null default '[]',
             audit_notes text not null default '[]',
+            blocks text not null default '[]',
+            cover text not null default '{}',
+            digest text not null default '',
+            title_options text not null default '[]',
             version_type text not null,
             generation_mode text not null,
             created_at text not null default current_timestamp
@@ -99,6 +103,7 @@ def init_db(conn: sqlite3.Connection) -> None:
         );
         """
     )
+    ensure_article_version_columns(conn)
     for template in BUILTIN_TEMPLATES:
         conn.execute(
             """
@@ -118,6 +123,19 @@ def init_db(conn: sqlite3.Connection) -> None:
             template,
         )
     conn.commit()
+
+
+def ensure_article_version_columns(conn: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in conn.execute("pragma table_info(article_versions)").fetchall()}
+    migrations = {
+        "blocks": "alter table article_versions add column blocks text not null default '[]'",
+        "cover": "alter table article_versions add column cover text not null default '{}'",
+        "digest": "alter table article_versions add column digest text not null default ''",
+        "title_options": "alter table article_versions add column title_options text not null default '[]'",
+    }
+    for name, sql in migrations.items():
+        if name not in columns:
+            conn.execute(sql)
 
 
 def dumps(value) -> str:

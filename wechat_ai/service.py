@@ -2,7 +2,7 @@ import sqlite3
 
 from .config import generation_mode_label
 from .db import dumps, loads
-from .generator import build_article_content, title_candidates
+from .generator import build_article_content, model_output_to_markdown, title_candidates
 from .quality import score_article
 from .render import markdown_to_wechat_html
 
@@ -44,8 +44,8 @@ def save_version(conn: sqlite3.Connection, job_id: int, article: dict, version_t
         """
         insert into article_versions
             (job_id, title, markdown, html, seo_keywords, image_slots, audit_notes,
-             version_type, generation_mode)
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             blocks, cover, digest, title_options, version_type, generation_mode)
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             job_id,
@@ -55,6 +55,10 @@ def save_version(conn: sqlite3.Connection, job_id: int, article: dict, version_t
             dumps(article.get("seo_keywords", [])),
             dumps(article.get("image_slots", [])),
             dumps(article.get("audit_notes", [])),
+            dumps(article.get("blocks", [])),
+            dumps(article.get("cover", {})),
+            article.get("digest", ""),
+            dumps(article.get("title_options", [])),
             version_type,
             article.get("generation_mode", "simulation"),
         ),
@@ -182,6 +186,10 @@ def version_to_dict(conn: sqlite3.Connection, row) -> dict:
         "seo_keywords": loads(row["seo_keywords"], []),
         "image_slots": loads(row["image_slots"], []),
         "audit_notes": loads(row["audit_notes"], []),
+        "blocks": loads(row["blocks"], []),
+        "cover": loads(row["cover"], {}),
+        "digest": row["digest"],
+        "title_options": loads(row["title_options"], []),
         "version_type": row["version_type"],
         "generation_mode": row["generation_mode"],
         "generation_mode_label": generation_mode_label("x" if row["generation_mode"] == "api" else None),
@@ -223,6 +231,25 @@ def rewrite_article(conn: sqlite3.Connection, job_id: int, rewrite_hint: str, ap
     rewritten["version_id"] = save_version(conn, job_id, rewritten, "rewrite")
     conn.commit()
     return rewritten
+
+
+def save_blocks(conn: sqlite3.Connection, job_id: int, blocks: list[dict], api_key: str | None = None) -> dict:
+    article = get_article(conn, job_id)
+    latest = dict(article["latest"])
+    payload = article_payload(article["job"])
+    generated = {
+        "title": latest["title"],
+        "digest": latest.get("digest", ""),
+        "blocks": blocks,
+    }
+    latest["blocks"] = blocks
+    latest["markdown"] = model_output_to_markdown(generated, payload)
+    latest["html"] = markdown_to_wechat_html(latest["markdown"], latest.get("image_slots", []))
+    latest["audit_notes"] = ["已保存 blocks 编辑内容，并重新生成微信公众号 HTML。"] + latest["audit_notes"]
+    latest["generation_mode"] = "api" if api_key else latest.get("generation_mode", "simulation")
+    latest["version_id"] = save_version(conn, job_id, latest, "blocks_edited")
+    conn.commit()
+    return latest
 
 
 def replace_image(conn: sqlite3.Connection, job_id: int, slot_index: int, selected_asset_path: str) -> dict:
