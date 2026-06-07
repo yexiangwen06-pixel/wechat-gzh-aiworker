@@ -142,7 +142,7 @@ class WechatAiCoreTests(unittest.TestCase):
             config["rewrites"],
             [{"source": "/(.*)", "destination": "/api/index.py"}],
         )
-        self.assertEqual(config["functions"]["api/index.py"]["maxDuration"], 30)
+        self.assertNotIn("functions", config)
 
     def test_vercel_entry_initializes_tmp_sqlite_and_env_runtime(self):
         from types import SimpleNamespace
