@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -547,7 +548,7 @@ def collect_image_generation_prompts(generated: dict) -> list[str]:
 
 
 def create_generated_prompt_asset(conn, query: str, prompt: str) -> dict:
-    target_dir = Path(".tmp") / "generated_images"
+    target_dir = Path(os.environ.get("WECHAT_AI_UPLOAD_DIR", Path(".tmp") / "uploads")) / "generated_images"
     target_dir.mkdir(parents=True, exist_ok=True)
     safe_stem = re.sub(r"[^A-Za-z0-9_\-\u4e00-\u9fff]+", "_", query).strip("_") or "ai_image"
     target = target_dir / f"{safe_stem[:48]}.svg"

@@ -345,6 +345,24 @@ def render_home_page(conn, api_key: str | None = None) -> str:
     return layout("AI 助手入口", body, api_key)
 
 
+def render_operation_error_page(title: str, message: str, api_key: str | None = None) -> str:
+    body = f"""
+<section class="surface">
+  <p class="muted">操作没有完成</p>
+  <h1>{escape(title)}</h1>
+  <p>系统已经捕获错误，没有影响工作台其他页面。请根据下方原因调整后重试。</p>
+  <div class="recommend" style="border-left-color:#dc2626;background:#fff5f5;color:#991b1b;">
+    {escape(message)}
+  </div>
+  <div class="assistant-actions">
+    <a class="btn" href="/articles/new">重新生成文章</a>
+    <a class="btn secondary" href="/assets">打开素材库</a>
+    <a class="btn secondary" href="/">返回首页</a>
+  </div>
+</section>"""
+    return layout(title, body, api_key)
+
+
 def render_new_article_page(conn, api_key: str | None = None) -> str:
     body = """
 <section class="surface">
@@ -991,8 +1009,8 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
                 for filename, data in uploads:
                     save_uploaded_image(self.server.conn, filename, data)
                 self.redirect("/assets" + (f"?{parsed.query}" if parsed.query else ""))
-            except ValueError:
-                self.send_error(400, "Invalid image upload")
+            except Exception as exc:
+                self.respond(render_operation_error_page("素材上传失败", str(exc), self.server.api_key))
             return
         if parsed.path != "/articles/create":
             self.send_error(404, "Not found")
@@ -1013,8 +1031,11 @@ class WorkbenchHandler(BaseHTTPRequestHandler):
             "cta": data.get("cta", [""])[0],
             "template_id": int(data.get("template_id", ["1"])[0]),
         }
-        article = create_article(self.server.conn, payload, self.server.api_key)
-        self.redirect(f"/articles/{article['job_id']}")
+        try:
+            article = create_article(self.server.conn, payload, self.server.api_key)
+            self.redirect(f"/articles/{article['job_id']}")
+        except Exception as exc:
+            self.respond(render_operation_error_page("文章生成失败", str(exc), self.server.api_key))
 
     def respond_json(self, payload: dict, status: int = 200):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")

@@ -177,6 +177,21 @@ class WechatAiCoreTests(unittest.TestCase):
         self.assertTrue(Path(db_path).exists())
         self.assertGreaterEqual(asset_count, 5)
 
+    def test_generated_prompt_asset_uses_configured_upload_dir(self):
+        from wechat_ai.db import connect, init_db
+        from wechat_ai.generator import create_generated_prompt_asset
+
+        tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        self.addCleanup(tmp.cleanup)
+        conn = connect(Path(tmp.name) / "test.db")
+        init_db(conn)
+        upload_dir = Path(tmp.name) / "uploads"
+        with patch.dict(os.environ, {"WECHAT_AI_UPLOAD_DIR": str(upload_dir)}, clear=False):
+            asset = create_generated_prompt_asset(conn, "企业茶水间场景", "企业茶水间智能直饮机使用场景")
+
+        self.assertTrue(Path(asset["path"]).exists())
+        self.assertTrue(str(asset["path"]).startswith(str(upload_dir)))
+
     def test_api_generation_uses_model_output_and_keeps_wechat_preview_images(self):
         from wechat_ai.service import create_article
 
